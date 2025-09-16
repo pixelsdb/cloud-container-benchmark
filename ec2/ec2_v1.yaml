@@ -1,0 +1,228 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'EC2 Cold/Warm Start Time Test Infrastructure'
+
+Parameters:
+  TestImage:
+    Type: String
+    # Default: 'public.ecr.aws/docker/library/python:latest'
+    Default: '970089764833.dkr.ecr.us-east-2.amazonaws.com/gengdy/pixeks-spike-worker:1.0'
+    Description: Container image to use for testing
+
+  InstanceType:
+    Type: String
+    Default: 't3.micro'
+    Description: EC2 instance type for the container instances
+
+  InstanceCount:
+    Type: Number
+    Default: 1
+    Description: Number of EC2 instances to maintain in the cluster
+
+  InstanceRoleArn:
+    Type: String
+    Description: ARN of an existing IAM role for EC2 instances (with ECS permissions)
+
+Resources:
+  # VPC和网络配置
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: '10.0.0.0/16'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: '10.0.1.0/24'
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet
+
+  # 安全组
+  TestSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for test tasks and instances
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+          Description: Allow all inbound traffic (for testing purposes)
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic
+
+  # ECS集群
+  TestCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: 'ec2-startup-test-cluster'
+
+  # # ECS实例配置文
+  # ECSInstanceProfile:
+  #   Type: AWS::IAM::InstanceProfile
+  #   Properties:
+  #     Roles:
+  #       - !Select [1, !Split ["/", !Ref InstanceRoleArn]]
+
+
+  # 启动模板
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: 'ec2-startup-test-launch-template'
+      LaunchTemplateData:
+        ImageId: '{{resolve:ssm:/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id}}'
+        InstanceType: !Ref InstanceType
+        IamInstanceProfile:
+          Arn: !Ref InstanceRoleArn
+        SecurityGroupIds:
+          - !Ref TestSecurityGroup
+
+
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash -ex
+            exec &> /var/log/user-data.log
+
+            yum install -y aws-cfn-bootstrap
+
+            # 写 ECS 配置（无缩进）
+            cat >/etc/ecs/ecs.config <<'EOF'
+            ECS_CLUSTER=ec2-startup-test-cluster
+            ECS_LOGLEVEL=debug
+            EOF
+            rm -f /var/lib/ecs/data/agent.db || true
+
+            # 后台轮询 ECS Agent 元数据并 signal
+            (
+              for i in {1..60}; do
+                if curl -fsS http://localhost:51678/v1/metadata >/dev/null; then
+                  /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+                  exit 0
+                fi
+                sleep 5
+              done
+              echo "ECS agent not ready in time" >&2
+              [ -f /var/log/ecs/ecs-agent.log ] && tail -n 100 /var/log/ecs/ecs-agent.log >&2
+              /opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+            ) &
+
+            exit 0
+
+
+  # 自动伸缩组
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MinSize: !Ref InstanceCount
+      MaxSize: !Ref InstanceCount
+      DesiredCapacity: !Ref InstanceCount
+      VPCZoneIdentifier:
+        - !Ref PublicSubnet
+      HealthCheckType: EC2
+      HealthCheckGracePeriod: 300
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: 0
+        MaxBatchSize: 1
+        PauseTime: PT15M
+        WaitOnResourceSignals: true
+
+  # 测试任务定义
+  TestTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: 'ec2-startup-test-task'
+      NetworkMode: bridge
+      RequiresCompatibilities:
+        - EC2
+      Cpu: '256'
+      Memory: '512'
+      ContainerDefinitions:
+        - Name: 'test-container'
+          Image: !Ref TestImage
+          Essential: true
+          Command:
+            - sh
+            - -c
+            - 'echo "Container started at: $(date +%s%N)" && sleep 300'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: 'ec2-test'
+
+  # CloudWatch日志组
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: '/ecs/ec2-startup-test'
+      RetentionInDays: 1
+
+Outputs:
+  ClusterName:
+    Description: Name of the ECS Cluster
+    Value: !Ref TestCluster
+    
+  TaskDefinitionArn:
+    Description: ARN of the Task Definition
+    Value: !Ref TestTaskDefinition
+    
+  SubnetId:
+    Description: ID of the Public Subnet
+    Value: !Ref PublicSubnet
+    
+  SecurityGroupId:
+    Description: ID of the Security Group
+    Value: !Ref TestSecurityGroup
+    
+  LogGroupName:
+    Description: Name of the CloudWatch Log Group
+    Value: !Ref LogGroup
+
+  LaunchTemplateId:
+    Description: ID of the EC2 Launch Template
+    Value: !Ref LaunchTemplate
+    
+  InstanceRoleArn:
+    Description: ARN of the IAM Instance Profile
+    Value: !Ref InstanceRoleArn
