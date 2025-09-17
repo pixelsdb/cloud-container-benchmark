@@ -44,10 +44,10 @@ def extract_timestamps(full_output: str, label: str):
             }
         return None
 
-# 执行20次循环
+# 执行100次循环
 for i in range(20):
     print(f"\nRunning iteration {i+1}/20 ...")
-    
+
     try:
         # 执行三个脚本
         subprocess.run(['./create.sh'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
