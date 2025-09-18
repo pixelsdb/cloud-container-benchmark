@@ -2,7 +2,7 @@
 
 # --- 配置 ---
 # 测试总次数
-TOTAL_RUNS=50
+TOTAL_RUNS=100
 # AWS 区域
 REGION="us-east-2"
 # CloudFormation 堆栈名称
