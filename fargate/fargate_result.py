@@ -2,6 +2,8 @@
 import subprocess
 import re
 import json
+import matplotlib
+matplotlib.use('Agg')  # 使用非交互式后端
 import matplotlib.pyplot as plt
 
 # 数据存储
