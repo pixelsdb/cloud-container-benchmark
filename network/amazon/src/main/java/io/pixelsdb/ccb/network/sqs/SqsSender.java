@@ -27,7 +27,7 @@ public class SqsSender implements Sender
     private final String queueUrl;
     private boolean closed = false;
     private AtomicInteger contentId = new AtomicInteger(0);
-    private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private final ExecutorService executor = Executors.newFixedThreadPool(8);
 
     public SqsSender(String s3Prefix, String queueUrl) throws IOException
     {

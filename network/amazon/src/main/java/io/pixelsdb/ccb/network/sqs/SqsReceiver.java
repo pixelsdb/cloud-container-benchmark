@@ -29,7 +29,7 @@ public class SqsReceiver implements Receiver
     private final String queueUrl;
     private boolean closed = false;
     private final Queue<String> s3PathQueue = new ConcurrentLinkedQueue<>();
-    private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private final ExecutorService executor = Executors.newFixedThreadPool(8);
 
     public SqsReceiver(String queueUrl) throws IOException
     {

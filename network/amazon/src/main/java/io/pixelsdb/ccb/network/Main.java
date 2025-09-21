@@ -55,6 +55,8 @@ public class Main
             long end = System.currentTimeMillis();
             System.out.println("latency: " + (end - start)/1000.0d + " seconds");
             System.out.println("rate: " + 10240 * 1000.0d/(end - start) + " MB/s");
+            System.out.println("start at: " + start);
+            System.out.println("stop at" + end);
         }
         else if (program.equals("receiver"))
         {
@@ -85,6 +87,8 @@ public class Main
             long end = System.currentTimeMillis();
             System.out.println("latency: " + (end - start)/1000.0d + " seconds");
             System.out.println("rate: " + 10240 * 1000.0d/(end - start) + " MB/s");
+            System.out.println("start at: " + start);
+            System.out.println("stop at" + end);
         }
         else
         {
