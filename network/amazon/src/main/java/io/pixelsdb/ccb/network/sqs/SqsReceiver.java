@@ -29,7 +29,7 @@ public class SqsReceiver implements Receiver
     private final String queueUrl;
     private boolean closed = false;
     private final Queue<String> s3PathQueue = new ConcurrentLinkedQueue<>();
-    private final ExecutorService executor = Executors.newFixedThreadPool(8);
+    private final ExecutorService executor = Executors.newFixedThreadPool(16);
 
     public SqsReceiver(String queueUrl) throws IOException
     {
@@ -62,7 +62,7 @@ public class SqsReceiver implements Receiver
             System.out.println(path);
             try (PhysicalReader reader = PhysicalReaderUtil.newPhysicalReader(this.s3, path))
             {
-                reader.readAsync(0, bytes);
+                reader.readFully(bytes);
             } catch (IOException e)
             {
                 e.printStackTrace();
