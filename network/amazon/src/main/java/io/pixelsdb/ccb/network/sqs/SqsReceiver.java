@@ -14,6 +14,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author hank
@@ -26,6 +29,7 @@ public class SqsReceiver implements Receiver
     private final String queueUrl;
     private boolean closed = false;
     private final Queue<String> s3PathQueue = new ConcurrentLinkedQueue<>();
+    private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public SqsReceiver(String queueUrl) throws IOException
     {
@@ -53,12 +57,18 @@ public class SqsReceiver implements Receiver
             }
             s3Path = this.s3PathQueue.poll();
         }
-        System.out.println(s3Path);
-        try (PhysicalReader reader = PhysicalReaderUtil.newPhysicalReader(this.s3, s3Path))
-        {
-            reader.readAsync(0, bytes);
-            return null;
-        }
+        String path = s3Path;
+        this.executor.submit(() -> {
+            System.out.println(path);
+            try (PhysicalReader reader = PhysicalReaderUtil.newPhysicalReader(this.s3, path))
+            {
+                reader.readAsync(0, bytes);
+            } catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        });
+        return null;
     }
 
     @Override
@@ -70,6 +80,20 @@ public class SqsReceiver implements Receiver
     @Override
     public void close() throws IOException
     {
+        this.executor.shutdown();
+        while (true)
+        {
+            try
+            {
+                if (this.executor.awaitTermination(1, TimeUnit.SECONDS))
+                {
+                    break;
+                }
+            } catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+        }
         this.sqsClient.close();
         this.closed = true;
     }
