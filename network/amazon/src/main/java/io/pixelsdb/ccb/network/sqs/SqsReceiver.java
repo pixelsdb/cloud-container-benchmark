@@ -1,6 +1,8 @@
 package io.pixelsdb.ccb.network.sqs;
 
 import io.pixelsdb.ccb.network.Receiver;
+import io.pixelsdb.pixels.common.physical.PhysicalReader;
+import io.pixelsdb.pixels.common.physical.PhysicalReaderUtil;
 import io.pixelsdb.pixels.common.physical.Storage;
 import io.pixelsdb.pixels.common.physical.StorageFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -52,9 +54,9 @@ public class SqsReceiver implements Receiver
             s3Path = this.s3PathQueue.poll();
         }
         System.out.println(s3Path);
-        //try (PhysicalReader reader = PhysicalReaderUtil.newPhysicalReader(this.s3, s3Path))
+        try (PhysicalReader reader = PhysicalReaderUtil.newPhysicalReader(this.s3, s3Path))
         {
-            //return reader.readFully(bytes);
+            reader.readAsync(0, bytes);
             return null;
         }
     }
