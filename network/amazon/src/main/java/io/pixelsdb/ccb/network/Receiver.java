@@ -12,4 +12,7 @@ public interface Receiver extends AutoCloseable
     ByteBuffer receive(int bytes) throws IOException;
 
     boolean isClosed();
+
+    @Override
+    void close() throws IOException;
 }
