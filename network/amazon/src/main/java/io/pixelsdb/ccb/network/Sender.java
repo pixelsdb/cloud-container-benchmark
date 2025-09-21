@@ -11,4 +11,7 @@ public interface Sender extends AutoCloseable
     void send(byte[] buffer) throws IOException;
 
     boolean isClosed();
+
+    @Override
+    void close() throws IOException;
 }
