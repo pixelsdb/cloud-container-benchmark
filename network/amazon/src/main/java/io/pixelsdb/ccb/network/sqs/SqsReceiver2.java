@@ -40,7 +40,7 @@ public class SqsReceiver2 implements Receiver
         response.whenComplete((res, err) -> {
             if (res.hasMessages())
             {
-                String path = res.messages().getFirst().body();
+                String path = res.messages().get(0).body();
                 System.out.println(path);
                 try (PhysicalReader reader = PhysicalReaderUtil.newPhysicalReader(this.s3, path))
                 {
