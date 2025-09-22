@@ -2,8 +2,8 @@ package io.pixelsdb.ccb.network;
 
 import io.pixelsdb.ccb.network.http.HttpReceiver;
 import io.pixelsdb.ccb.network.http.HttpSender;
-import io.pixelsdb.ccb.network.sqs.SqsReceiver2;
-import io.pixelsdb.ccb.network.sqs.SqsSender2;
+import io.pixelsdb.ccb.network.sqs.SqsReceiver;
+import io.pixelsdb.ccb.network.sqs.SqsSender;
 
 import java.io.IOException;
 
@@ -36,7 +36,7 @@ public class Main
             {
                 String s3Prefix = args[2];
                 String queueUrl = args[3];
-                sender = new SqsSender2(s3Prefix, queueUrl);
+                sender = new SqsSender(s3Prefix, queueUrl);
             }
             else
             {
@@ -47,7 +47,7 @@ public class Main
             sender.send(smallBuffer);
             long start = System.currentTimeMillis();
             byte[] buffer = new byte[8 * 1024 * 1024];
-            for (int i = 0; i < 1280; ++i)
+            for (int i = 0; i < 12800; ++i)
             {
                 sender.send(buffer);
             }
@@ -70,7 +70,7 @@ public class Main
             else if (method.equals("sqs"))
             {
                 String queueUrl = args[2];
-                receiver = new SqsReceiver2(queueUrl);
+                receiver = new SqsReceiver(queueUrl);
             }
             else
             {
@@ -79,7 +79,7 @@ public class Main
             }
             receiver.receive(8);
             long start = System.currentTimeMillis();
-            for (int i = 0; i < 1280; ++i)
+            for (int i = 0; i < 12800; ++i)
             {
                 receiver.receive(8 * 1024 * 1024);
             }
