@@ -2,7 +2,7 @@ package io.pixelsdb.ccb.network;
 
 import io.pixelsdb.ccb.network.http.HttpReceiver;
 import io.pixelsdb.ccb.network.http.HttpSender;
-import io.pixelsdb.ccb.network.sqs.SqsReceiver;
+import io.pixelsdb.ccb.network.sqs.SqsReceiver2;
 import io.pixelsdb.ccb.network.sqs.SqsSender;
 
 import java.io.IOException;
@@ -70,7 +70,7 @@ public class Main
             else if (method.equals("sqs"))
             {
                 String queueUrl = args[2];
-                receiver = new SqsReceiver(queueUrl);
+                receiver = new SqsReceiver2(queueUrl);
             }
             else
             {
