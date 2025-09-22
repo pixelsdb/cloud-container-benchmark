@@ -3,7 +3,7 @@ package io.pixelsdb.ccb.network;
 import io.pixelsdb.ccb.network.http.HttpReceiver;
 import io.pixelsdb.ccb.network.http.HttpSender;
 import io.pixelsdb.ccb.network.sqs.SqsReceiver2;
-import io.pixelsdb.ccb.network.sqs.SqsSender;
+import io.pixelsdb.ccb.network.sqs.SqsSender2;
 
 import java.io.IOException;
 
@@ -36,7 +36,7 @@ public class Main
             {
                 String s3Prefix = args[2];
                 String queueUrl = args[3];
-                sender = new SqsSender(s3Prefix, queueUrl);
+                sender = new SqsSender2(s3Prefix, queueUrl);
             }
             else
             {

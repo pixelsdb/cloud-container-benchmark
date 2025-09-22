@@ -34,7 +34,7 @@ public class SqsReceiver2 implements Receiver
     public ByteBuffer receive(int bytes) throws IOException
     {
         ReceiveMessageRequest request = ReceiveMessageRequest.builder()
-            .queueUrl(queueUrl).maxNumberOfMessages(1).waitTimeSeconds(1).build();
+            .queueUrl(queueUrl).maxNumberOfMessages(1).waitTimeSeconds(100).build();
         CompletableFuture<ReceiveMessageResponse> response = this.sqsClient.receiveMessage(request);
 
         response.whenComplete((res, err) -> {
