@@ -26,7 +26,7 @@ public class SqsAsyncReceiver implements Receiver
     private final SqsClient sqsClient;
     private final String queueUrl;
     private boolean closed = false;
-    private final List<CompletableFuture<ByteBuffer>> s3Responses = new LinkedList<>();
+    private final List<CompletableFuture<Void>> s3Responses = new LinkedList<>();
 
     public SqsAsyncReceiver(String queueUrl) throws IOException
     {
@@ -45,10 +45,11 @@ public class SqsAsyncReceiver implements Receiver
             for (Message message : response.messages())
             {
                 String path = message.body();
-                System.out.println(path);
                 try (PhysicalReader reader = PhysicalReaderUtil.newPhysicalReader(this.s3, path))
                 {
-                    this.s3Responses.add(reader.readAsync(0, bytes));
+                    this.s3Responses.add(reader.readAsync(0, bytes).thenAccept(buf -> {
+                        System.out.println(path);
+                    }));
                 } catch (IOException e)
                 {
                     e.printStackTrace();
@@ -67,7 +68,7 @@ public class SqsAsyncReceiver implements Receiver
     @Override
     public void close() throws IOException
     {
-        for (CompletableFuture<ByteBuffer> response : this.s3Responses)
+        for (CompletableFuture<Void> response : this.s3Responses)
         {
             response.join();
         }
