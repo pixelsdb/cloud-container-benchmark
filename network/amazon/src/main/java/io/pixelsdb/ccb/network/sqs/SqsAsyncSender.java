@@ -25,8 +25,8 @@ public class SqsAsyncSender implements Sender
 {
     private final S3 s3;
     private final SqsAsyncClient sqsClient;
-    private final String s3Bucket;
-    private final String s3Prefix;
+    private final String bucket;
+    private final String keyPrefix;
     private final String queueUrl;
     private boolean closed = false;
     private final AtomicInteger contentId = new AtomicInteger(0);
@@ -39,8 +39,8 @@ public class SqsAsyncSender implements Sender
         {
             s3Prefix += "/";
         }
-        this.s3Prefix = s3Prefix;
-        this.s3Bucket = s3Prefix.substring(0, s3Prefix.indexOf("/"));
+        this.bucket = s3Prefix.substring(0, s3Prefix.indexOf("/"));
+        this.keyPrefix = s3Prefix.substring(this.bucket.length() + 1);
         this.queueUrl = queueUrl;
         this.s3 = (S3) StorageFactory.Instance().getStorage(Storage.Scheme.s3);
         this.sqsClient = SqsAsyncClient.create();
@@ -51,8 +51,8 @@ public class SqsAsyncSender implements Sender
     {
         this.rateLimiter.acquire(buffer.length);
         int contentId = this.contentId.getAndIncrement();
-        String path = s3Prefix + contentId;
-        PutObjectRequest putObjectRequest = PutObjectRequest.builder().bucket(s3Bucket).key(path).build();
+        String path = keyPrefix + contentId;
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder().bucket(bucket).key(path).build();
         CompletableFuture<PutObjectResponse> response = this.s3.getAsyncClient()
                 .putObject(putObjectRequest, AsyncRequestBody.fromBytes(buffer));
 
