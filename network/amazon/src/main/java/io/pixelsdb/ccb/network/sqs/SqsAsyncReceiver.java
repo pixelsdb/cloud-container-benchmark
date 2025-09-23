@@ -40,8 +40,9 @@ public class SqsAsyncReceiver implements Receiver
     @Override
     public ByteBuffer receive(int bytes) throws IOException
     {
+        this.rateLimiter.acquire(bytes);
         ReceiveMessageRequest request = ReceiveMessageRequest.builder()
-            .queueUrl(queueUrl).maxNumberOfMessages(10).waitTimeSeconds(20).build();
+            .queueUrl(queueUrl).maxNumberOfMessages(1).waitTimeSeconds(20).build();
         this.sqsResponses.add(this.sqsClient.receiveMessage(request).whenComplete((response, err) -> {
             if (err != null)
             {
@@ -53,7 +54,6 @@ public class SqsAsyncReceiver implements Receiver
                 for (Message message : response.messages())
                 {
                     String path = message.body();
-                    this.rateLimiter.acquire(bytes);
                     try (PhysicalReader reader = PhysicalReaderUtil.newPhysicalReader(this.s3, path))
                     {
                         CompletableFuture<Void> future = new CompletableFuture<>();
