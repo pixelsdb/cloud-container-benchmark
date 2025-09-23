@@ -1,5 +1,6 @@
 package io.pixelsdb.ccb.network.sqs;
 
+import com.google.common.util.concurrent.RateLimiter;
 import io.pixelsdb.ccb.network.Sender;
 import io.pixelsdb.pixels.common.physical.Storage;
 import io.pixelsdb.pixels.common.physical.StorageFactory;
@@ -30,6 +31,7 @@ public class SqsAsyncSender implements Sender
     private boolean closed = false;
     private final AtomicInteger contentId = new AtomicInteger(0);
     private final List<CompletableFuture<PutObjectResponse>> s3Responses = new LinkedList<>();
+    private final RateLimiter rateLimiter = RateLimiter.create(3000d * 1024d * 1024d);
 
     public SqsAsyncSender(String s3Prefix, String queueUrl) throws IOException
     {
@@ -47,6 +49,7 @@ public class SqsAsyncSender implements Sender
     @Override
     public void send(byte[] buffer) throws IOException
     {
+        this.rateLimiter.acquire(buffer.length);
         int contentId = this.contentId.getAndIncrement();
         String path = s3Prefix + contentId;
         PutObjectRequest putObjectRequest = PutObjectRequest.builder().bucket(s3Bucket).key(path).build();

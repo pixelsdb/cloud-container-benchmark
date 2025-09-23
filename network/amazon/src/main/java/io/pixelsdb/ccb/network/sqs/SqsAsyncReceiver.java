@@ -1,5 +1,6 @@
 package io.pixelsdb.ccb.network.sqs;
 
+import com.google.common.util.concurrent.RateLimiter;
 import io.pixelsdb.ccb.network.Receiver;
 import io.pixelsdb.pixels.common.physical.PhysicalReader;
 import io.pixelsdb.pixels.common.physical.PhysicalReaderUtil;
@@ -27,6 +28,7 @@ public class SqsAsyncReceiver implements Receiver
     private final String queueUrl;
     private boolean closed = false;
     private final List<CompletableFuture<Void>> s3Responses = new LinkedList<>();
+    private final RateLimiter rateLimiter = RateLimiter.create(3000d * 1024d * 1024d);
 
     public SqsAsyncReceiver(String queueUrl) throws IOException
     {
@@ -37,6 +39,7 @@ public class SqsAsyncReceiver implements Receiver
     @Override
     public ByteBuffer receive(int bytes) throws IOException
     {
+        this.rateLimiter.acquire(bytes);
         ReceiveMessageRequest request = ReceiveMessageRequest.builder()
             .queueUrl(queueUrl).maxNumberOfMessages(10).waitTimeSeconds(20).build();
         ReceiveMessageResponse response = this.sqsClient.receiveMessage(request);
