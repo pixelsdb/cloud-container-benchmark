@@ -6,17 +6,21 @@ import io.pixelsdb.pixels.common.physical.StorageFactory;
 import io.pixelsdb.pixels.storage.s3.S3;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author hank
  * @create 2025-09-20
  */
-public class SqsSender2 implements Sender
+public class SqsAsyncSender implements Sender
 {
     private final S3 s3;
     private final SqsAsyncClient sqsClient;
@@ -24,9 +28,10 @@ public class SqsSender2 implements Sender
     private final String s3Prefix;
     private final String queueUrl;
     private boolean closed = false;
-    private AtomicInteger contentId = new AtomicInteger(0);
+    private final AtomicInteger contentId = new AtomicInteger(0);
+    private final List<CompletableFuture<PutObjectResponse>> s3Responses = new LinkedList<>();
 
-    public SqsSender2(String s3Prefix, String queueUrl) throws IOException
+    public SqsAsyncSender(String s3Prefix, String queueUrl) throws IOException
     {
         if (!s3Prefix.endsWith("/"))
         {
@@ -45,15 +50,15 @@ public class SqsSender2 implements Sender
         int contentId = this.contentId.getAndIncrement();
         String path = s3Prefix + contentId;
         PutObjectRequest putObjectRequest = PutObjectRequest.builder().bucket(s3Bucket).key(path).build();
-        this.s3.getAsyncClient().putObject(putObjectRequest, AsyncRequestBody.fromBytes(buffer))
-                .whenComplete((res, err) -> {
-                    SendMessageRequest request = SendMessageRequest.builder()
-                            .queueUrl(queueUrl)
-                            .messageBody(path).build();
-                    sqsClient.sendMessage(request).whenComplete((res0, err0) -> {
-                        System.out.println(res0.toString());
-                    });
-                });
+        CompletableFuture<PutObjectResponse> response = this.s3.getAsyncClient()
+                .putObject(putObjectRequest, AsyncRequestBody.fromBytes(buffer));
+
+        this.s3Responses.add(response.whenComplete((res, err) -> {
+            SendMessageRequest request = SendMessageRequest.builder().queueUrl(queueUrl).messageBody(path).build();
+            sqsClient.sendMessage(request).whenComplete((res0, err0) -> {
+                System.out.println(res0.toString());
+            });
+        }));
     }
 
     @Override
@@ -65,6 +70,10 @@ public class SqsSender2 implements Sender
     @Override
     public void close() throws IOException
     {
+        for (CompletableFuture<PutObjectResponse> response : this.s3Responses)
+        {
+            response.join();
+        }
         this.sqsClient.close();
         this.closed = true;
     }

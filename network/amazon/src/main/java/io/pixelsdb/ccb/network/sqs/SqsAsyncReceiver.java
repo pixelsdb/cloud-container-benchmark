@@ -11,20 +11,23 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * @author hank
  * @create 2025-09-20
  */
-public class SqsReceiver2 implements Receiver
+public class SqsAsyncReceiver implements Receiver
 {
     private final Storage s3 = StorageFactory.Instance().getStorage(Storage.Scheme.s3);
     private final SqsAsyncClient sqsClient;
     private final String queueUrl;
     private boolean closed = false;
+    private final List<CompletableFuture<ReceiveMessageResponse>> sqsResponses = new LinkedList<>();
 
-    public SqsReceiver2(String queueUrl) throws IOException
+    public SqsAsyncReceiver(String queueUrl) throws IOException
     {
         this.queueUrl = queueUrl;
         this.sqsClient = SqsAsyncClient.create();
@@ -36,8 +39,7 @@ public class SqsReceiver2 implements Receiver
         ReceiveMessageRequest request = ReceiveMessageRequest.builder()
             .queueUrl(queueUrl).maxNumberOfMessages(1).waitTimeSeconds(100).build();
         CompletableFuture<ReceiveMessageResponse> response = this.sqsClient.receiveMessage(request);
-
-        response.whenComplete((res, err) -> {
+        this.sqsResponses.add(response.whenComplete((res, err) -> {
             if (res.hasMessages())
             {
                 String path = res.messages().get(0).body();
@@ -50,7 +52,7 @@ public class SqsReceiver2 implements Receiver
                     e.printStackTrace();
                 }
             }
-        });
+        }));
         return null;
     }
 
@@ -63,6 +65,10 @@ public class SqsReceiver2 implements Receiver
     @Override
     public void close() throws IOException
     {
+        for (CompletableFuture<ReceiveMessageResponse> response : this.sqsResponses)
+        {
+            response.join();
+        }
         this.sqsClient.close();
         this.closed = true;
     }
