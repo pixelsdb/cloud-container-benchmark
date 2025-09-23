@@ -29,7 +29,7 @@ public class SqsAsyncReceiver implements Receiver
     private boolean closed = false;
     private final Queue<CompletableFuture<ReceiveMessageResponse>> sqsResponses = new ConcurrentLinkedQueue<>();
     private final Queue<CompletableFuture<Void>> s3Responses = new ConcurrentLinkedQueue<>();
-    private final RateLimiter rateLimiter = RateLimiter.create(3000d * 1024d * 1024d);
+    private final RateLimiter rateLimiter = RateLimiter.create(1500d * 1024d * 1024d);
 
     public SqsAsyncReceiver(String queueUrl) throws IOException
     {
