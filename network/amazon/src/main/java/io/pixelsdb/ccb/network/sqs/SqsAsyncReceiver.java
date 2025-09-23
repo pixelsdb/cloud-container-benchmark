@@ -87,7 +87,7 @@ public class SqsAsyncReceiver implements Receiver
         }
         for (CompletableFuture<Void> response : this.s3Responses)
         {
-            response.join();
+            //response.join();
         }
         this.sqsClient.close();
         this.closed = true;
