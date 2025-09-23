@@ -47,9 +47,12 @@ public class SqsAsyncReceiver implements Receiver
                 String path = message.body();
                 try (PhysicalReader reader = PhysicalReaderUtil.newPhysicalReader(this.s3, path))
                 {
-                    this.s3Responses.add(reader.readAsync(0, bytes).thenAccept(buf -> {
+                    CompletableFuture<Void> future = new CompletableFuture<>();
+                    this.s3Responses.add(future);
+                    reader.readAsync(0, bytes).whenComplete((buf, err) -> {
                         System.out.println(path);
-                    }));
+                        future.complete(null);
+                    });
                 } catch (IOException e)
                 {
                     e.printStackTrace();
