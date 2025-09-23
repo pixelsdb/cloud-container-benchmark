@@ -5,7 +5,8 @@ import io.pixelsdb.pixels.common.physical.PhysicalReader;
 import io.pixelsdb.pixels.common.physical.PhysicalReaderUtil;
 import io.pixelsdb.pixels.common.physical.Storage;
 import io.pixelsdb.pixels.common.physical.StorageFactory;
-import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
@@ -22,37 +23,38 @@ import java.util.concurrent.CompletableFuture;
 public class SqsAsyncReceiver implements Receiver
 {
     private final Storage s3 = StorageFactory.Instance().getStorage(Storage.Scheme.s3);
-    private final SqsAsyncClient sqsClient;
+    private final SqsClient sqsClient;
     private final String queueUrl;
     private boolean closed = false;
-    private final List<CompletableFuture<ReceiveMessageResponse>> sqsResponses = new LinkedList<>();
+    private final List<CompletableFuture<ByteBuffer>> s3Responses = new LinkedList<>();
 
     public SqsAsyncReceiver(String queueUrl) throws IOException
     {
         this.queueUrl = queueUrl;
-        this.sqsClient = SqsAsyncClient.create();
+        this.sqsClient = SqsClient.create();
     }
 
     @Override
     public ByteBuffer receive(int bytes) throws IOException
     {
         ReceiveMessageRequest request = ReceiveMessageRequest.builder()
-            .queueUrl(queueUrl).maxNumberOfMessages(1).waitTimeSeconds(20).build();
-        CompletableFuture<ReceiveMessageResponse> response = this.sqsClient.receiveMessage(request);
-        this.sqsResponses.add(response.whenComplete((res, err) -> {
-            if (res.hasMessages())
+            .queueUrl(queueUrl).maxNumberOfMessages(10).waitTimeSeconds(20).build();
+        ReceiveMessageResponse response = this.sqsClient.receiveMessage(request);
+        if (response.hasMessages())
+        {
+            for (Message message : response.messages())
             {
-                String path = res.messages().get(0).body();
+                String path = message.body();
                 System.out.println(path);
                 try (PhysicalReader reader = PhysicalReaderUtil.newPhysicalReader(this.s3, path))
                 {
-                    reader.readFully(bytes);
+                    this.s3Responses.add(reader.readAsync(0, bytes));
                 } catch (IOException e)
                 {
                     e.printStackTrace();
                 }
             }
-        }));
+        }
         return null;
     }
 
@@ -65,7 +67,7 @@ public class SqsAsyncReceiver implements Receiver
     @Override
     public void close() throws IOException
     {
-        for (CompletableFuture<ReceiveMessageResponse> response : this.sqsResponses)
+        for (CompletableFuture<ByteBuffer> response : this.s3Responses)
         {
             response.join();
         }
