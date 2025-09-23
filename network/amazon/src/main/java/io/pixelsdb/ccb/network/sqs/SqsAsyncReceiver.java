@@ -37,7 +37,7 @@ public class SqsAsyncReceiver implements Receiver
     public ByteBuffer receive(int bytes) throws IOException
     {
         ReceiveMessageRequest request = ReceiveMessageRequest.builder()
-            .queueUrl(queueUrl).maxNumberOfMessages(1).waitTimeSeconds(100).build();
+            .queueUrl(queueUrl).maxNumberOfMessages(1).waitTimeSeconds(20).build();
         CompletableFuture<ReceiveMessageResponse> response = this.sqsClient.receiveMessage(request);
         this.sqsResponses.add(response.whenComplete((res, err) -> {
             if (res.hasMessages())
