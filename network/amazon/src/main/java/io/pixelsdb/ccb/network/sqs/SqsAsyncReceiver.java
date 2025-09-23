@@ -6,16 +6,16 @@ import io.pixelsdb.pixels.common.physical.PhysicalReader;
 import io.pixelsdb.pixels.common.physical.PhysicalReaderUtil;
 import io.pixelsdb.pixels.common.physical.Storage;
 import io.pixelsdb.pixels.common.physical.StorageFactory;
-import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * @author hank
@@ -24,44 +24,51 @@ import java.util.concurrent.CompletableFuture;
 public class SqsAsyncReceiver implements Receiver
 {
     private final Storage s3 = StorageFactory.Instance().getStorage(Storage.Scheme.s3);
-    private final SqsClient sqsClient;
+    private final SqsAsyncClient sqsClient;
     private final String queueUrl;
     private boolean closed = false;
-    private final List<CompletableFuture<Void>> s3Responses = new LinkedList<>();
+    private final Queue<CompletableFuture<ReceiveMessageResponse>> sqsResponses = new ConcurrentLinkedQueue<>();
+    private final Queue<CompletableFuture<Void>> s3Responses = new ConcurrentLinkedQueue<>();
     private final RateLimiter rateLimiter = RateLimiter.create(3000d * 1024d * 1024d);
 
     public SqsAsyncReceiver(String queueUrl) throws IOException
     {
         this.queueUrl = queueUrl;
-        this.sqsClient = SqsClient.create();
+        this.sqsClient = SqsAsyncClient.create();
     }
 
     @Override
     public ByteBuffer receive(int bytes) throws IOException
     {
-        this.rateLimiter.acquire(bytes);
         ReceiveMessageRequest request = ReceiveMessageRequest.builder()
             .queueUrl(queueUrl).maxNumberOfMessages(10).waitTimeSeconds(20).build();
-        ReceiveMessageResponse response = this.sqsClient.receiveMessage(request);
-        if (response.hasMessages())
-        {
-            for (Message message : response.messages())
+        this.sqsResponses.add(this.sqsClient.receiveMessage(request).whenComplete((response, err) -> {
+            if (err != null)
             {
-                String path = message.body();
-                try (PhysicalReader reader = PhysicalReaderUtil.newPhysicalReader(this.s3, path))
+                err.printStackTrace();
+                return;
+            }
+            if (response.hasMessages())
+            {
+                for (Message message : response.messages())
                 {
-                    CompletableFuture<Void> future = new CompletableFuture<>();
-                    this.s3Responses.add(future);
-                    reader.readAsync(0, bytes).whenComplete((buf, err) -> {
-                        System.out.println(path);
-                        future.complete(null);
-                    });
-                } catch (IOException e)
-                {
-                    e.printStackTrace();
+                    String path = message.body();
+                    this.rateLimiter.acquire(bytes);
+                    try (PhysicalReader reader = PhysicalReaderUtil.newPhysicalReader(this.s3, path))
+                    {
+                        CompletableFuture<Void> future = new CompletableFuture<>();
+                        this.s3Responses.add(future);
+                        reader.readAsync(0, bytes).whenComplete((buf, err0) -> {
+                            System.out.println(path);
+                            future.complete(null);
+                        });
+                    } catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
                 }
             }
-        }
+        }));
         return null;
     }
 
@@ -74,6 +81,10 @@ public class SqsAsyncReceiver implements Receiver
     @Override
     public void close() throws IOException
     {
+        for (CompletableFuture<ReceiveMessageResponse> response : this.sqsResponses)
+        {
+            response.join();
+        }
         for (CompletableFuture<Void> response : this.s3Responses)
         {
             response.join();

@@ -60,6 +60,7 @@ public class SqsAsyncSender implements Sender
             if (err != null)
             {
                 this.s3.reconnect();
+                return;
             }
             SendMessageRequest request = SendMessageRequest.builder().queueUrl(queueUrl)
                     .messageBody(this.bucket + "/" + path).build();
