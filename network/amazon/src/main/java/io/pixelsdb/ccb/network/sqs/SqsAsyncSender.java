@@ -4,7 +4,7 @@ import io.pixelsdb.ccb.network.Sender;
 import io.pixelsdb.pixels.common.physical.Storage;
 import io.pixelsdb.pixels.common.physical.StorageFactory;
 import io.pixelsdb.pixels.storage.s3.S3;
-import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.core.internal.async.ByteBuffersAsyncRequestBody;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
@@ -51,7 +51,7 @@ public class SqsAsyncSender implements Sender
         String path = s3Prefix + contentId;
         PutObjectRequest putObjectRequest = PutObjectRequest.builder().bucket(s3Bucket).key(path).build();
         CompletableFuture<PutObjectResponse> response = this.s3.getAsyncClient()
-                .putObject(putObjectRequest, AsyncRequestBody.fromBytes(buffer));
+                .putObject(putObjectRequest, ByteBuffersAsyncRequestBody.from(buffer));
 
         this.s3Responses.add(response.whenComplete((res, err) -> {
             SendMessageRequest request = SendMessageRequest.builder().queueUrl(queueUrl).messageBody(path).build();
