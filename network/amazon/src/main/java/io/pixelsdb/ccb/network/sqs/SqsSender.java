@@ -10,6 +10,9 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -24,6 +27,7 @@ public class SqsSender implements Sender
     private final String queueUrl;
     private boolean closed = false;
     private AtomicInteger contentId = new AtomicInteger(0);
+    private final ExecutorService executor = Executors.newFixedThreadPool(8);
 
     public SqsSender(String s3Prefix, String queueUrl) throws IOException
     {
@@ -41,16 +45,22 @@ public class SqsSender implements Sender
     public void send(byte[] buffer) throws IOException
     {
         int contentId = this.contentId.getAndIncrement();
-        String path = Storage.Scheme.s3 + "://" + s3Prefix + contentId;
-        try (PhysicalWriter s3PhysicalWriter = PhysicalWriterUtil.newPhysicalWriter(s3, path, true))
-        {
-            s3PhysicalWriter.append(buffer, 0, buffer.length);
-        }
-        SendMessageRequest request = SendMessageRequest.builder()
-                .queueUrl(queueUrl)
-                .messageBody(path).build();
-        SendMessageResponse response = sqsClient.sendMessage(request);
-        System.out.println(response.toString());
+        this.executor.submit(() -> {
+            String path = Storage.Scheme.s3 + "://" + s3Prefix + contentId;
+            try (PhysicalWriter s3PhysicalWriter = PhysicalWriterUtil.newPhysicalWriter(s3, path, true))
+            {
+                s3PhysicalWriter.append(buffer, 0, buffer.length);
+            } catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+            SendMessageRequest request = SendMessageRequest.builder()
+                    .queueUrl(queueUrl)
+                    .messageBody(path).build();
+            SendMessageResponse response = sqsClient.sendMessage(request);
+            System.out.println(response.toString());
+        });
+
     }
 
     @Override
@@ -62,6 +72,20 @@ public class SqsSender implements Sender
     @Override
     public void close() throws IOException
     {
+        this.executor.shutdown();
+        while (true)
+        {
+            try
+            {
+                if (this.executor.awaitTermination(1, TimeUnit.SECONDS))
+                {
+                    break;
+                }
+            } catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+        }
         this.sqsClient.close();
         this.closed = true;
     }

@@ -47,14 +47,16 @@ public class Main
             sender.send(smallBuffer);
             long start = System.currentTimeMillis();
             byte[] buffer = new byte[8 * 1024 * 1024];
-            for (int i = 0; i < 1280; ++i)
+            for (int i = 0; i < 12800; ++i)
             {
                 sender.send(buffer);
             }
             sender.close();
             long end = System.currentTimeMillis();
             System.out.println("latency: " + (end - start)/1000.0d + " seconds");
-            System.out.println("rate: " + 10240 * 1000.0d/(end - start) + " MB/s");
+            System.out.println("rate: " + 102400 * 1000.0d/(end - start) + " MB/s");
+            System.out.println("start at: " + start);
+            System.out.println("stop at: " + end);
         }
         else if (program.equals("receiver"))
         {
@@ -77,14 +79,16 @@ public class Main
             }
             receiver.receive(8);
             long start = System.currentTimeMillis();
-            for (int i = 0; i < 1280; ++i)
+            for (int i = 0; i < 12800; ++i)
             {
                 receiver.receive(8 * 1024 * 1024);
             }
             receiver.close();
             long end = System.currentTimeMillis();
             System.out.println("latency: " + (end - start)/1000.0d + " seconds");
-            System.out.println("rate: " + 10240 * 1000.0d/(end - start) + " MB/s");
+            System.out.println("rate: " + 102400 * 1000.0d/(end - start) + " MB/s");
+            System.out.println("start at: " + start);
+            System.out.println("stop at: " + end);
         }
         else
         {
