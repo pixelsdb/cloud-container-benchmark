@@ -33,13 +33,21 @@ public class S3qsReceiver implements Receiver
     public ByteBuffer receive(int bytes) throws IOException
     {
         this.executor.submit(() -> {
-            try (PhysicalReader reader = this.queue.poll(10))
+            while (true)
             {
-                reader.readFully(bytes);
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
+                try (PhysicalReader reader = this.queue.poll(10))
+                {
+                    if (reader == null)
+                    {
+                        continue;
+                    }
+                    reader.readFully(bytes);
+                    break;
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
             }
         });
         return null;
