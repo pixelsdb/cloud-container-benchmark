@@ -53,7 +53,7 @@ public class SqsAsyncSender implements Sender
         int contentId = this.contentId.getAndIncrement();
         String path = keyPrefix + contentId;
         PutObjectRequest putObjectRequest = PutObjectRequest.builder().bucket(bucket).key(path).build();
-        CompletableFuture<PutObjectResponse> response = this.s3.getAsyncClient()
+        CompletableFuture<PutObjectResponse> response = this.s3.getS3AsyncClient()
                 .putObject(putObjectRequest, AsyncRequestBody.fromBytes(buffer));
 
         this.s3Responses.add(response.whenComplete((res, err) -> {
