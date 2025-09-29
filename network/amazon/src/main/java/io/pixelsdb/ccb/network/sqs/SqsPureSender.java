@@ -21,7 +21,7 @@ public class SqsPureSender implements Sender
     private final SqsClient sqsClient;
     private final String queueUrl;
     private boolean closed = false;
-    private final ExecutorService executor = Executors.newFixedThreadPool(8);
+    private final ExecutorService executor = Executors.newFixedThreadPool(64);
 
     public SqsPureSender(String queueUrl) throws IOException
     {

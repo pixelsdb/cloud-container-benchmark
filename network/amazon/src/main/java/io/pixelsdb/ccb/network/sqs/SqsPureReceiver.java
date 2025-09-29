@@ -24,7 +24,7 @@ public class SqsPureReceiver implements Receiver
     public SqsPureReceiver(String queueUrl) throws IOException
     {
         this.sqsClient = SqsClient.create();
-        for (int i = 0; i < 8; ++i)
+        for (int i = 0; i < 64; ++i)
         {
             this.executor.submit(() -> {
                 while (!closed)
