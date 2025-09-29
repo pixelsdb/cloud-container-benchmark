@@ -37,7 +37,6 @@ public class SqsPureReceiver implements Receiver
                     {
                         for (Message message : response.messages())
                         {
-                            System.out.println(message.messageId());
                             ByteBuffer buffer = message.messageAttributes().get("content").binaryValue().asByteBuffer();
                             this.contentQueue.add(buffer);
                         }

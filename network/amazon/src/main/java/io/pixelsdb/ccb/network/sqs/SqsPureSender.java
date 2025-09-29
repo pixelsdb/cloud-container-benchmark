@@ -5,7 +5,6 @@ import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
-import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 import java.io.IOException;
 import java.util.Map;
@@ -45,8 +44,7 @@ public class SqsPureSender implements Sender
                     .messageAttributes(messageAttributeMap).build();
             try
             {
-                SendMessageResponse response = sqsClient.sendMessage(request);
-                System.out.println(response.messageId());
+                sqsClient.sendMessage(request);
             }
             catch (Throwable e)
             {
