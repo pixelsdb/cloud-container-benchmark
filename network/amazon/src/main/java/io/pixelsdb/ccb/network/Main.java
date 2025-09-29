@@ -14,7 +14,7 @@ import java.io.IOException;
 public class Main
 {
     private static final int BUFFER_SIZE = 1024 * 1000;
-    private static final long BUFFER_NUM = 12800 * 8;
+    private static final long BUFFER_NUM = 12800;
     public static void main(String[] args) throws IOException
     {
         if (args.length < 2)
