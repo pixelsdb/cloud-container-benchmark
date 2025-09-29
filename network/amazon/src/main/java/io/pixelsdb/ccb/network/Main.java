@@ -2,8 +2,8 @@ package io.pixelsdb.ccb.network;
 
 import io.pixelsdb.ccb.network.http.HttpReceiver;
 import io.pixelsdb.ccb.network.http.HttpSender;
-import io.pixelsdb.ccb.network.sqs.S3qsReceiver;
-import io.pixelsdb.ccb.network.sqs.S3qsSender;
+import io.pixelsdb.ccb.network.sqs.SqsPureReceiver;
+import io.pixelsdb.ccb.network.sqs.SqsPureSender;
 
 import java.io.IOException;
 
@@ -13,6 +13,8 @@ import java.io.IOException;
  */
 public class Main
 {
+    private static final int BUFFER_SIZE = 1 * 1000 * 1000;
+    private static final long BUFFER_NUM = 12800 * 8;
     public static void main(String[] args) throws IOException
     {
         if (args.length < 2)
@@ -36,25 +38,25 @@ public class Main
             {
                 String s3Prefix = args[2];
                 String queueUrl = args[3];
-                sender = new S3qsSender(s3Prefix, queueUrl);
+                sender = new SqsPureSender(queueUrl);
             }
             else
             {
                 System.err.println("Unknown method: " + method);
                 return;
             }
-            byte[] smallBuffer = new byte[8];
+            byte[] smallBuffer = new byte[BUFFER_SIZE];
             sender.send(smallBuffer);
             long start = System.currentTimeMillis();
-            byte[] buffer = new byte[8 * 1024 * 1024];
-            for (int i = 0; i < 12800; ++i)
+            byte[] buffer = new byte[BUFFER_SIZE];
+            for (int i = 0; i < BUFFER_NUM; ++i)
             {
                 sender.send(buffer);
             }
             sender.close();
             long end = System.currentTimeMillis();
             System.out.println("latency: " + (end - start)/1000.0d + " seconds");
-            System.out.println("rate: " + 102400 * 1000.0d/(end - start) + " MB/s");
+            System.out.println("rate: " + BUFFER_SIZE * BUFFER_NUM * 1000.0d / 1024 / 1024 / (end - start) + " MB/s");
             System.out.println("start at: " + start);
             System.out.println("stop at: " + end);
         }
@@ -70,23 +72,23 @@ public class Main
             else if (method.equals("sqs"))
             {
                 String queueUrl = args[2];
-                receiver = new S3qsReceiver(queueUrl);
+                receiver = new SqsPureReceiver(queueUrl);
             }
             else
             {
                 System.err.println("Unknown method: " + method);
                 return;
             }
-            receiver.receive(8);
+            receiver.receive(BUFFER_SIZE);
             long start = System.currentTimeMillis();
-            for (int i = 0; i < 12800; ++i)
+            for (int i = 0; i < BUFFER_NUM; ++i)
             {
-                receiver.receive(8 * 1024 * 1024);
+                receiver.receive(BUFFER_SIZE);
             }
             receiver.close();
             long end = System.currentTimeMillis();
             System.out.println("latency: " + (end - start)/1000.0d + " seconds");
-            System.out.println("rate: " + 102400 * 1000.0d/(end - start) + " MB/s");
+            System.out.println("rate: " + BUFFER_SIZE * BUFFER_NUM * 1000.0d / 1024 / 1024 / (end - start) + " MB/s");
             System.out.println("start at: " + start);
             System.out.println("stop at: " + end);
         }
