@@ -39,6 +39,7 @@ public class S3qsReceiver implements Receiver
                 {
                     if (reader == null)
                     {
+                        System.out.println("reader is null");
                         continue;
                     }
                     reader.readFully(bytes);
