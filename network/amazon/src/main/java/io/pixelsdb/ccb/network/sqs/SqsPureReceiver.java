@@ -30,15 +30,16 @@ public class SqsPureReceiver implements Receiver
                 while (!closed)
                 {
                     ReceiveMessageRequest request = ReceiveMessageRequest.builder()
+                            .messageAttributeNames("content")
                             .queueUrl(queueUrl).maxNumberOfMessages(10).waitTimeSeconds(5).build();
                     ReceiveMessageResponse response = this.sqsClient.receiveMessage(request);
-                    if (!response.hasMessages())
+                    if (response.hasMessages())
                     {
                         for (Message message : response.messages())
                         {
                             System.out.println(message.messageId());
-                            String content = message.body();
-                            this.contentQueue.add(ByteBuffer.wrap(content.getBytes()));
+                            ByteBuffer buffer = message.messageAttributes().get("content").binaryValue().asByteBuffer();
+                            this.contentQueue.add(buffer);
                         }
                     }
                 }

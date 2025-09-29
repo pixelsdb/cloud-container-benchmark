@@ -13,7 +13,7 @@ import java.io.IOException;
  */
 public class Main
 {
-    private static final int BUFFER_SIZE = 1 * 1000 * 1000;
+    private static final int BUFFER_SIZE = 1024 * 1000;
     private static final long BUFFER_NUM = 12800 * 8;
     public static void main(String[] args) throws IOException
     {

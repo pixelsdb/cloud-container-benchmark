@@ -1,11 +1,14 @@
 package io.pixelsdb.ccb.network.sqs;
 
 import io.pixelsdb.ccb.network.Sender;
+import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -31,11 +34,24 @@ public class SqsPureSender implements Sender
     public void send(byte[] buffer) throws IOException
     {
         this.executor.submit(() -> {
+            Map<String, MessageAttributeValue> messageAttributeMap = Map.of(
+                    "content", MessageAttributeValue.builder()
+                            .binaryValue(SdkBytes.fromByteArray(buffer))
+                            .dataType("Binary").build()
+            );
             SendMessageRequest request = SendMessageRequest.builder()
                     .queueUrl(queueUrl)
-                    .messageBody(new String(buffer)).build();
-            SendMessageResponse response = sqsClient.sendMessage(request);
-            System.out.println(response.messageId());
+                    .messageBody("body")
+                    .messageAttributes(messageAttributeMap).build();
+            try
+            {
+                SendMessageResponse response = sqsClient.sendMessage(request);
+                System.out.println(response.messageId());
+            }
+            catch (Throwable e)
+            {
+                e.printStackTrace();
+            }
         });
 
     }
