@@ -17,14 +17,12 @@ import java.util.concurrent.*;
 public class SqsPureReceiver implements Receiver
 {
     private final SqsClient sqsClient;
-    private final String queueUrl;
     private boolean closed = false;
     private final BlockingQueue<ByteBuffer> contentQueue = new LinkedBlockingQueue<>();
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
     public SqsPureReceiver(String queueUrl) throws IOException
     {
-        this.queueUrl = queueUrl;
         this.sqsClient = SqsClient.create();
         for (int i = 0; i < 8; ++i)
         {
@@ -38,6 +36,7 @@ public class SqsPureReceiver implements Receiver
                     {
                         for (Message message : response.messages())
                         {
+                            System.out.println(message.messageId());
                             String content = message.body();
                             this.contentQueue.add(ByteBuffer.wrap(content.getBytes()));
                         }

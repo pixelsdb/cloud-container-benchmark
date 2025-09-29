@@ -3,6 +3,7 @@ package io.pixelsdb.ccb.network.sqs;
 import io.pixelsdb.ccb.network.Sender;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -33,7 +34,8 @@ public class SqsPureSender implements Sender
             SendMessageRequest request = SendMessageRequest.builder()
                     .queueUrl(queueUrl)
                     .messageBody(new String(buffer)).build();
-            sqsClient.sendMessage(request);
+            SendMessageResponse response = sqsClient.sendMessage(request);
+            System.out.println(response.messageId());
         });
 
     }
