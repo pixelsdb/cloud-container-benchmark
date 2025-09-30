@@ -4,8 +4,8 @@ Description: 'Fargate Cold/Warm Start Time Test Infrastructure'
 Parameters:
   TestImage:
     Type: String
-    # Default: '970089764833.dkr.ecr.us-east-2.amazonaws.com/ecr-public/eks-distro/kubernetes-csi/livenessprobe:v2.15.0-eks-1-33-9' # 120mb public image
-    Default: '970089764833.dkr.ecr.us-east-2.amazonaws.com/gengdy/pixeks-spike-worker:1.0' # 150mb private image
+    Default: '970089764833.dkr.ecr.us-east-2.amazonaws.com/ecr-public/eks-distro/kubernetes-csi/livenessprobe:v2.15.0-eks-1-33-9' # 120mb public image
+    # Default: '970089764833.dkr.ecr.us-east-2.amazonaws.com/gengdy/pixeks-spike-worker:1.0' # 150mb private image
     Description: Container image to use for testing
 
   ExecutionRoleArn:

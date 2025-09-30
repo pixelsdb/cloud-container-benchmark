@@ -2,6 +2,10 @@
 import subprocess
 import re
 import json
+import os
+import sys
+import atexit
+import argparse
 import matplotlib
 matplotlib.use('Agg')  # 使用非交互式后端
 import matplotlib.pyplot as plt
@@ -14,6 +18,54 @@ hot_pull_times = []
 cold_prepare_times = []
 hot_prepare_times = []
 savings = []
+
+# 参数与输出目录/日志设置
+parser = argparse.ArgumentParser(description='Fargate startup time collector')
+parser.add_argument('--image-type', choices=['privateimage', 'publicimage', 'private', 'public'], required=True, help='选择使用 privateimage 或 publicimage（必选）')
+args = parser.parse_args()
+image_type = args.image_type
+if image_type == 'private':
+    image_type = 'privateimage'
+elif image_type == 'public':
+    image_type = 'publicimage'
+
+out_dir = os.path.join('images', image_type)
+os.makedirs(out_dir, exist_ok=True)
+
+# 日志 Tee：同时输出到控制台与文件
+log_file = f'fargate_result_{image_type}.log'
+class _Tee:
+    def __init__(self, *files):
+        self._files = files
+    def write(self, data):
+        for f in self._files:
+            try:
+                f.write(data)
+            except Exception:
+                pass
+    def flush(self):
+        for f in self._files:
+            try:
+                f.flush()
+            except Exception:
+                pass
+
+_orig_stdout = sys.stdout
+_orig_stderr = sys.stderr
+_log_fp = open(log_file, 'w', encoding='utf-8')
+sys.stdout = _Tee(_orig_stdout, _log_fp)
+sys.stderr = _Tee(_orig_stderr, _log_fp)
+
+@atexit.register
+def _restore_std_streams():
+    try:
+        sys.stdout = _orig_stdout
+        sys.stderr = _orig_stderr
+    finally:
+        try:
+            _log_fp.close()
+        except Exception:
+            pass
 
 # 正则表达式
 cold_pattern = r'冷启动时间: (\d+)ms'
@@ -163,7 +215,7 @@ plt.xlabel('Preparation Time (ms)')
 plt.ylabel('Frequency')
 
 plt.tight_layout()
-plt.savefig('startup_time_summary.png')
+plt.savefig(os.path.join(out_dir, 'startup_time_summary.png'))
 
 # 单独保存每张图
 fig, ax = plt.subplots()
@@ -171,7 +223,7 @@ ax.hist(cold_total_times, bins=10, alpha=0.7, color='blue', edgecolor='black')
 ax.set_title('Cold Start Total Time Distribution')
 ax.set_xlabel('Total Time (ms)')
 ax.set_ylabel('Frequency')
-fig.savefig('cold_start_total_time_PrivateImage.png')
+fig.savefig(os.path.join(out_dir, 'cold_start_total_time.png'))
 plt.close(fig)
 
 fig, ax = plt.subplots()
@@ -179,7 +231,7 @@ ax.hist(hot_total_times, bins=10, alpha=0.7, color='green', edgecolor='black')
 ax.set_title('Hot Start Total Time Distribution')
 ax.set_xlabel('Total Time (ms)')
 ax.set_ylabel('Frequency')
-fig.savefig('hot_start_total_time_PrivateImage.png')
+fig.savefig(os.path.join(out_dir, 'hot_start_total_time.png'))
 plt.close(fig)
 
 fig, ax = plt.subplots()
@@ -187,7 +239,7 @@ ax.hist(cold_pull_times, bins=10, alpha=0.7, color='purple', edgecolor='black')
 ax.set_title('Cold Start Image Pull Time Distribution')
 ax.set_xlabel('Pull Time (ms)')
 ax.set_ylabel('Frequency')
-fig.savefig('cold_start_pull_time_PrivateImage.png')
+fig.savefig(os.path.join(out_dir, 'cold_start_pull_time.png'))
 plt.close(fig)
 
 fig, ax = plt.subplots()
@@ -195,7 +247,7 @@ ax.hist(hot_pull_times, bins=10, alpha=0.7, color='orange', edgecolor='black')
 ax.set_title('Hot Start Image Pull Time Distribution')
 ax.set_xlabel('Pull Time (ms)')
 ax.set_ylabel('Frequency')
-fig.savefig('hot_start_pull_time_PrivateImage.png')
+fig.savefig(os.path.join(out_dir, 'hot_start_pull_time.png'))
 plt.close(fig)
 
 fig, ax = plt.subplots()
@@ -203,7 +255,7 @@ ax.hist(cold_prepare_times, bins=10, alpha=0.7, color='cyan', edgecolor='black')
 ax.set_title('Cold Start Preparation Time Distribution')
 ax.set_xlabel('Preparation Time (ms)')
 ax.set_ylabel('Frequency')
-fig.savefig('cold_start_prepare_time_PrivateImage.png')
+fig.savefig(os.path.join(out_dir, 'cold_start_prepare_time.png'))
 plt.close(fig)
 
 fig, ax = plt.subplots()
@@ -211,5 +263,8 @@ ax.hist(hot_prepare_times, bins=10, alpha=0.7, color='red', edgecolor='black')
 ax.set_title('Hot Start Preparation Time Distribution')
 ax.set_xlabel('Preparation Time (ms)')
 ax.set_ylabel('Frequency')
-fig.savefig('hot_start_prepare_time_PrivateImage.png')
+fig.savefig(os.path.join(out_dir, 'hot_start_prepare_time.png'))
+
+print(f"图片已保存到目录: {out_dir}")
+print(f"日志已保存到: {log_file}")
 plt.close(fig)
