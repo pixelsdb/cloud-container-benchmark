@@ -19,7 +19,7 @@ CLUSTER_NAME = "fargate-startup-test-cluster"
 TASK_DEFINITION = "startup-test-task"
 NUM_TASKS = 100
 POLL_BATCH = 20  # 分批等待/查询，避免参数过长或限流
-OUTPUT_CSV = "concurrent_fargate_tasks.csv"
+# OUTPUT_CSV = "concurrent_fargate_tasks.csv"
 
 # =============== 参数：镜像类型及输出目录 ===============
 parser = argparse.ArgumentParser(description='Concurrent Fargate tasks startup benchmark')
@@ -269,21 +269,21 @@ for t in raw_tasks:
     })
     records.append(rec)
 
-# 5) 打印简要中文摘要，并导出 CSV
-print(">>> 任务时间统计 (仅显示前10条预览)...")
-for i, r in enumerate(records[:10], start=1):
-    print(f"任务{i}: 总时间={r['total_ms']}ms，镜像拉取={r['pull_ms']}ms，准备={r['prepare_ms']}ms")
+# # 5) 打印简要中文摘要，并导出 CSV
+# print(">>> 任务时间统计 (仅显示前10条预览)...")
+# for i, r in enumerate(records[:10], start=1):
+#     print(f"任务{i}: 总时间={r['total_ms']}ms，镜像拉取={r['pull_ms']}ms，准备={r['prepare_ms']}ms")
 
-with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
-    w = csv.DictWriter(f, fieldnames=[
-        "index", "taskArn", "createdAt", "startedAt", "pullStartedAt", "pullStoppedAt", "total_ms", "pull_ms", "prepare_ms"
-    ])
-    w.writeheader()
-    for idx, r in enumerate(records, start=1):
-        row = {"index": idx}
-        row.update(r)
-        w.writerow(row)
-print(f"明细已保存: {OUTPUT_CSV}")
+# with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
+#     w = csv.DictWriter(f, fieldnames=[
+#         "index", "taskArn", "createdAt", "startedAt", "pullStartedAt", "pullStoppedAt", "total_ms", "pull_ms", "prepare_ms"
+#     ])
+#     w.writeheader()
+#     for idx, r in enumerate(records, start=1):
+#         row = {"index": idx}
+#         row.update(r)
+#         w.writerow(row)
+# print(f"明细已保存: {OUTPUT_CSV}")
 
 # 6) 作图（英文标签），过滤 None
 all_total = [r["total_ms"] for r in records if r["total_ms"] is not None]
