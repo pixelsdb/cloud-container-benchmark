@@ -9,6 +9,7 @@ import io.pixelsdb.pixels.common.transaction.TransContext;
 import io.pixelsdb.pixels.common.transaction.TransService;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -113,8 +114,8 @@ public class Main
                     {
                         try
                         {
-                            TransContext context = transService.beginTrans(false);
-                            contexts.add(context);
+                            List<TransContext> ctxs = transService.beginTransBatch(10, false);
+                            contexts.addAll(ctxs);
                         } catch (TransException e)
                         {
                             throw new RuntimeException(e);
@@ -123,11 +124,22 @@ public class Main
                     System.out.println(System.currentTimeMillis() - start);
 
                     start = System.currentTimeMillis();
+                    List<Long> transIds = new ArrayList<>(10);
+                    List<Long> transTimestamps = new ArrayList<>(10);
+                    int j = 0;
                     for (TransContext context : contexts)
                     {
+                        if (j++ < 10)
+                        {
+                            transIds.add(context.getTransId());
+                            transTimestamps.add(context.getTimestamp());
+                            continue;
+                        }
                         try
                         {
-                            transService.commitTrans(context.getTransId(), context.getTimestamp());
+                            transService.commitTransBatch(transIds, transTimestamps);
+                            transIds.clear();
+                            transTimestamps.clear();
                         } catch (TransException e)
                         {
                             throw new RuntimeException(e);
