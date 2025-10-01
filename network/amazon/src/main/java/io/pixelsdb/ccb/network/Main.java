@@ -110,7 +110,7 @@ public class Main
                 executorService.submit(() -> {
                     List<TransContext> contexts = new LinkedList<>();
                     long start = System.currentTimeMillis();
-                    for (int j = 0; j < 10240; j++)
+                    for (int j = 0; j < 1024; j++)
                     {
                         try
                         {
