@@ -10,7 +10,6 @@ import io.pixelsdb.pixels.common.transaction.TransService;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -104,42 +103,24 @@ public class Main
         else if (program.equals("trans"))
         {
             TransService transService = TransService.CreateInstance("10.77.110.37", 18889);
-            ExecutorService executorService = Executors.newFixedThreadPool(64);
-            for (int i = 0; i < 64; i++)
+            ExecutorService executorService = Executors.newCachedThreadPool();
+            for (int i = 0; i < 128; i++)
             {
                 executorService.submit(() -> {
-                    List<TransContext> contexts = new LinkedList<>();
                     long start = System.currentTimeMillis();
-                    for (int j = 0; j < 1024; j++)
+                    for (int j = 0; j < 10240; j++)
                     {
                         try
                         {
-                            List<TransContext> ctxs = transService.beginTransBatch(10, false);
-                            contexts.addAll(ctxs);
-                        } catch (TransException e)
-                        {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                    System.out.println(System.currentTimeMillis() - start);
-
-                    start = System.currentTimeMillis();
-                    List<Long> transIds = new ArrayList<>(10);
-                    List<Long> transTimestamps = new ArrayList<>(10);
-                    int j = 0;
-                    for (TransContext context : contexts)
-                    {
-                        if (j++ < 10)
-                        {
-                            transIds.add(context.getTransId());
-                            transTimestamps.add(context.getTimestamp());
-                            continue;
-                        }
-                        try
-                        {
+                            List<TransContext> contexts = transService.beginTransBatch(1000, false);
+                            List<Long> transIds = new ArrayList<>(1000);
+                            List<Long> transTimestamps = new ArrayList<>(1000);
+                            for (TransContext context : contexts)
+                            {
+                                transIds.add(context.getTransId());
+                                transTimestamps.add(context.getTimestamp());
+                            }
                             transService.commitTransBatch(transIds, transTimestamps);
-                            transIds.clear();
-                            transTimestamps.clear();
                         } catch (TransException e)
                         {
                             throw new RuntimeException(e);
