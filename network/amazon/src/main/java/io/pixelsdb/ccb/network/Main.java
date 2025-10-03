@@ -106,27 +106,34 @@ public class Main
             ExecutorService executorService = Executors.newCachedThreadPool();
             for (int i = 0; i < 128; i++)
             {
+                int finalI = i;
                 executorService.submit(() -> {
-                    long start = System.currentTimeMillis();
-                    for (int j = 0; j < 10240; j++)
+                    try
                     {
-                        try
+                        long start = System.currentTimeMillis();
+                        for (int j = 0; j < 10240; j++)
                         {
-                            List<TransContext> contexts = transService.beginTransBatch(1000, false);
-                            List<Long> transIds = new ArrayList<>(1000);
-                            List<Long> transTimestamps = new ArrayList<>(1000);
-                            for (TransContext context : contexts)
+                            try
                             {
-                                transIds.add(context.getTransId());
-                                transTimestamps.add(context.getTimestamp());
+                                List<TransContext> contexts = transService.beginTransBatch(100, false);
+                                List<Long> transIds = new ArrayList<>(100);
+                                List<Long> transTimestamps = new ArrayList<>(100);
+                                for (TransContext context : contexts)
+                                {
+                                    transIds.add(context.getTransId());
+                                    transTimestamps.add(context.getTimestamp());
+                                }
+                                transService.commitTransBatch(transIds, transTimestamps);
+                            } catch (TransException e)
+                            {
+                                throw new RuntimeException(e);
                             }
-                            transService.commitTransBatch(transIds, transTimestamps);
-                        } catch (TransException e)
-                        {
-                            throw new RuntimeException(e);
                         }
+                        System.out.println(System.currentTimeMillis() - start);
+                    } catch (Exception e)
+                    {
+                        throw new RuntimeException(e);
                     }
-                    System.out.println(System.currentTimeMillis() - start);
                 });
             }
             executorService.shutdown();
