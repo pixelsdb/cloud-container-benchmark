@@ -106,13 +106,13 @@ public class Main
             TransService transService = TransService.CreateInstance("10.77.110.37", 18889);
             IndexService indexService = IndexServiceProvider.getService(IndexServiceProvider.ServiceMode.rpc);
             ExecutorService executorService = Executors.newCachedThreadPool();
-            for (int i = 0; i < 128; i++)
+            for (int i = 0; i < 64; i++)
             {
                 executorService.submit(() -> {
                     try
                     {
                         long beginTime = 0, commitTime = 0;
-                        for (int j = 0; j < 100; j++)
+                        for (int j = 0; j < 10; j++)
                         {
                             try
                             {
