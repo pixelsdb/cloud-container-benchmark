@@ -5,6 +5,8 @@ import io.pixelsdb.ccb.network.http.HttpSender;
 import io.pixelsdb.ccb.network.sqs.S3qsReceiver;
 import io.pixelsdb.ccb.network.sqs.S3qsSender;
 import io.pixelsdb.pixels.common.exception.TransException;
+import io.pixelsdb.pixels.common.index.IndexService;
+import io.pixelsdb.pixels.common.index.IndexServiceProvider;
 import io.pixelsdb.pixels.common.transaction.TransContext;
 import io.pixelsdb.pixels.common.transaction.TransService;
 
@@ -104,20 +106,22 @@ public class Main
         {
             TransService transService = TransService.CreateInstance("10.77.110.37", 18889);
             ExecutorService executorService = Executors.newCachedThreadPool();
-            for (int i = 0; i < 128; i++)
+            for (int i = 0; i < 64; i++)
             {
                 int finalI = i;
                 executorService.submit(() -> {
                     try
                     {
+                        IndexService indexService = IndexServiceProvider.getService(IndexServiceProvider.ServiceMode.rpc);
                         long start = System.currentTimeMillis();
-                        for (int j = 0; j < 10240; j++)
+                        for (int j = 0; j < 1024; j++)
                         {
                             try
                             {
-                                List<TransContext> contexts = transService.beginTransBatch(100, false);
-                                List<Long> transIds = new ArrayList<>(100);
-                                List<Long> transTimestamps = new ArrayList<>(100);
+                                indexService.allocateRowIdBatch(finalI, 1000);
+                                List<TransContext> contexts = transService.beginTransBatch(1000, false);
+                                List<Long> transIds = new ArrayList<>(1000);
+                                List<Long> transTimestamps = new ArrayList<>(1000);
                                 for (TransContext context : contexts)
                                 {
                                     transIds.add(context.getTransId());
