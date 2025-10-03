@@ -10,6 +10,7 @@ import io.pixelsdb.pixels.common.transaction.TransContext;
 import io.pixelsdb.pixels.common.transaction.TransService;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -110,7 +111,7 @@ public class Main
                 executorService.submit(() -> {
                     try
                     {
-                        long start = System.currentTimeMillis();
+                        long beginTime = 0, commitTime = 0;
                         for (int j = 0; j < 100; j++)
                         {
                             try
@@ -120,25 +121,29 @@ public class Main
                                 {
                                 //    System.out.println(batch.getLength());
                                 }
+                                long start = System.currentTimeMillis();
                                 List<TransContext> contexts = transService.beginTransBatch(1000, false);
+                                beginTime += System.currentTimeMillis() - start;
                                 if (contexts.size() != 1000)
                                 {
                                     System.out.println(contexts.size());
                                 }
-                                //List<Long> transIds = new ArrayList<>(1000);
-                                //List<Long> transTimestamps = new ArrayList<>(1000);
-                                //for (TransContext context : contexts)
+                                List<Long> transIds = new ArrayList<>(1000);
+                                List<Long> transTimestamps = new ArrayList<>(1000);
+                                for (TransContext context : contexts)
                                 {
-                                //    transIds.add(context.getTransId());
-                                //    transTimestamps.add(context.getTimestamp());
+                                    transIds.add(context.getTransId());
+                                    transTimestamps.add(context.getTimestamp());
                                 }
-                                //transService.commitTransBatch(transIds, transTimestamps);
+                                start = System.currentTimeMillis();
+                                transService.commitTransBatch(transIds, transTimestamps);
+                                commitTime += System.currentTimeMillis() - start;
                             } catch (Exception e)
                             {
                                 throw new RuntimeException(e);
                             }
                         }
-                        System.out.println("elapsed: " + (System.currentTimeMillis() - start));
+                        System.out.println("begin trans cost: " + beginTime + ", commit trans cost: " + commitTime);
                     } catch (Exception e)
                     {
                         throw new RuntimeException(e);
