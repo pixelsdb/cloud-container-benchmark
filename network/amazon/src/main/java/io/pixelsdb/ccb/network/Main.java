@@ -7,6 +7,7 @@ import io.pixelsdb.ccb.network.sqs.S3qsSender;
 import io.pixelsdb.pixels.common.index.IndexService;
 import io.pixelsdb.pixels.common.index.IndexServiceProvider;
 import io.pixelsdb.pixels.common.transaction.TransService;
+import io.pixelsdb.pixels.index.IndexProto;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -114,7 +115,11 @@ public class Main
                         {
                             try
                             {
-                                indexService.allocateRowIdBatch(finalI, 1000);
+                                IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(finalI, 1000);
+                                if (batch.getLength() != 1000)
+                                {
+                                    System.out.println(batch.getLength());
+                                }
                                 //List<TransContext> contexts = transService.beginTransBatch(1000, false);
                                 //List<Long> transIds = new ArrayList<>(1000);
                                 //List<Long> transTimestamps = new ArrayList<>(1000);
@@ -129,7 +134,7 @@ public class Main
                                 throw new RuntimeException(e);
                             }
                         }
-                        System.out.println(System.currentTimeMillis() - start);
+                        System.out.println("elapsed: " + (System.currentTimeMillis() - start));
                     } catch (Exception e)
                     {
                         throw new RuntimeException(e);
