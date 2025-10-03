@@ -106,16 +106,15 @@ public class Main
             ExecutorService executorService = Executors.newCachedThreadPool();
             for (int i = 0; i < 128; i++)
             {
-                int finalI = i;
                 executorService.submit(() -> {
                     try
                     {
                         long start = System.currentTimeMillis();
-                        for (int j = 0; j < 10240; j++)
+                        for (int j = 0; j < 100; j++)
                         {
                             try
                             {
-                                IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(finalI, 1000);
+                                IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(1, 1000);
                                 if (batch.getLength() != 1000)
                                 {
                                     System.out.println(batch.getLength());
