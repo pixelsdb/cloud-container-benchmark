@@ -6,10 +6,11 @@ import io.pixelsdb.ccb.network.sqs.S3qsReceiver;
 import io.pixelsdb.ccb.network.sqs.S3qsSender;
 import io.pixelsdb.pixels.common.index.IndexService;
 import io.pixelsdb.pixels.common.index.IndexServiceProvider;
+import io.pixelsdb.pixels.common.transaction.TransContext;
 import io.pixelsdb.pixels.common.transaction.TransService;
-import io.pixelsdb.pixels.index.IndexProto;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -114,12 +115,16 @@ public class Main
                         {
                             try
                             {
-                                IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(1, 1000);
-                                if (batch.getLength() != 1000)
+                                //IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(1, 1000);
+                                //if (batch.getLength() != 1000)
                                 {
-                                    System.out.println(batch.getLength());
+                                //    System.out.println(batch.getLength());
                                 }
-                                //List<TransContext> contexts = transService.beginTransBatch(1000, false);
+                                List<TransContext> contexts = transService.beginTransBatch(1000, false);
+                                if (contexts.size() != 1000)
+                                {
+                                    System.out.println(contexts.size());
+                                }
                                 //List<Long> transIds = new ArrayList<>(1000);
                                 //List<Long> transTimestamps = new ArrayList<>(1000);
                                 //for (TransContext context : contexts)
