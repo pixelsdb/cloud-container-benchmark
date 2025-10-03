@@ -102,7 +102,7 @@ public class Main
         {
             TransService transService = TransService.CreateInstance("10.77.110.37", 18889);
             ExecutorService executorService = Executors.newCachedThreadPool();
-            for (int i = 0; i < 64; i++)
+            for (int i = 0; i < 128; i++)
             {
                 int finalI = i;
                 executorService.submit(() -> {
@@ -110,7 +110,7 @@ public class Main
                     {
                         IndexService indexService = IndexServiceProvider.getService(IndexServiceProvider.ServiceMode.rpc);
                         long start = System.currentTimeMillis();
-                        for (int j = 0; j < 1024; j++)
+                        for (int j = 0; j < 10240; j++)
                         {
                             try
                             {
