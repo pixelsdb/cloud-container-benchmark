@@ -129,14 +129,12 @@ public class Main
                                     System.out.println(contexts.size());
                                 }
                                 List<Long> transIds = new ArrayList<>(100);
-                                List<Long> transTimestamps = new ArrayList<>(100);
                                 for (TransContext context : contexts)
                                 {
                                     transIds.add(context.getTransId());
-                                    transTimestamps.add(context.getTimestamp());
                                 }
                                 start = System.currentTimeMillis();
-                                transService.commitTransBatch(transIds, transTimestamps);
+                                transService.commitTransBatch(transIds);
                                 commitTime += System.currentTimeMillis() - start;
                             } catch (Exception e)
                             {
