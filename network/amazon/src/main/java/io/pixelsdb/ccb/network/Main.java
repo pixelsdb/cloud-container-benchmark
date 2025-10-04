@@ -124,7 +124,7 @@ public class Main
                                 long start = System.currentTimeMillis();
                                 List<TransContext> contexts = transService.beginTransBatch(1000, false);
                                 beginTime += System.currentTimeMillis() - start;
-                                if (contexts.size() != 100)
+                                if (contexts.size() != 1000)
                                 {
                                     System.out.println(contexts.size());
                                 }
