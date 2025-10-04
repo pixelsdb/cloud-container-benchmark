@@ -122,13 +122,13 @@ public class Main
                                 //    System.out.println(batch.getLength());
                                 }
                                 long start = System.currentTimeMillis();
-                                List<TransContext> contexts = transService.beginTransBatch(100, false);
+                                List<TransContext> contexts = transService.beginTransBatch(1000, false);
                                 beginTime += System.currentTimeMillis() - start;
                                 if (contexts.size() != 100)
                                 {
                                     System.out.println(contexts.size());
                                 }
-                                List<Long> transIds = new ArrayList<>(100);
+                                List<Long> transIds = new ArrayList<>(1000);
                                 for (TransContext context : contexts)
                                 {
                                     transIds.add(context.getTransId());
