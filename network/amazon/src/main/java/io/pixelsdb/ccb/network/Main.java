@@ -10,8 +10,6 @@ import io.pixelsdb.pixels.common.transaction.TransContext;
 import io.pixelsdb.pixels.common.transaction.TransService;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -106,13 +104,13 @@ public class Main
             TransService transService = TransService.CreateInstance("10.77.110.37", 18889);
             IndexService indexService = IndexServiceProvider.getService(IndexServiceProvider.ServiceMode.rpc);
             ExecutorService executorService = Executors.newCachedThreadPool();
-            for (int i = 0; i < 128; i++)
+            for (int i = 0; i < 16; i++)
             {
                 executorService.submit(() -> {
                     try
                     {
                         long beginTime = 0, commitTime = 0;
-                        for (int j = 0; j < 2048; j++)
+                        for (int j = 0; j < 204800; j++)
                         {
                             try
                             {
@@ -122,19 +120,10 @@ public class Main
                                 //    System.out.println(batch.getLength());
                                 }
                                 long start = System.currentTimeMillis();
-                                List<TransContext> contexts = transService.beginTransBatch(1000, false);
+                                TransContext context = transService.beginTrans(false);
                                 beginTime += System.currentTimeMillis() - start;
-                                if (contexts.size() != 1000)
-                                {
-                                    System.out.println(contexts.size());
-                                }
-                                List<Long> transIds = new ArrayList<>(1000);
-                                for (TransContext context : contexts)
-                                {
-                                    transIds.add(context.getTransId());
-                                }
                                 start = System.currentTimeMillis();
-                                transService.commitTransBatch(transIds, false);
+                                transService.commitTrans(context.getTransId(), false);
                                 commitTime += System.currentTimeMillis() - start;
                             } catch (Exception e)
                             {
