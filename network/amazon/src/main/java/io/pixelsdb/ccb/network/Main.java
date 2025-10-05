@@ -112,7 +112,7 @@ public class Main
                     try
                     {
                         long beginTime = 0, commitTime = 0;
-                        for (int j = 0; j < 20480; j++)
+                        for (int j = 0; j < 100; j++)
                         {
                             try
                             {
