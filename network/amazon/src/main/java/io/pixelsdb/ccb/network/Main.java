@@ -134,7 +134,7 @@ public class Main
                                     transIds.add(context.getTransId());
                                 }
                                 start = System.currentTimeMillis();
-                                transService.commitTransBatch(transIds);
+                                transService.commitTransBatch(transIds, false);
                                 commitTime += System.currentTimeMillis() - start;
                             } catch (Exception e)
                             {
