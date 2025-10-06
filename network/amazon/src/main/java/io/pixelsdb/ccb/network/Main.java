@@ -106,13 +106,13 @@ public class Main
             TransService transService = TransService.CreateInstance("10.77.110.37", 18889);
             IndexService indexService = IndexServiceProvider.getService(IndexServiceProvider.ServiceMode.rpc);
             ExecutorService executorService = Executors.newCachedThreadPool();
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < 128; i++)
             {
                 executorService.submit(() -> {
                     try
                     {
                         long beginTime = 0, commitTime = 0;
-                        for (int j = 0; j < 2; j++)
+                        for (int j = 0; j < 100; j++)
                         {
                             try
                             {
@@ -122,16 +122,15 @@ public class Main
                                 //    System.out.println(batch.getLength());
                                 }
                                 long start = System.currentTimeMillis();
-                                List<TransContext> contexts = transService.beginTransBatch(10, false);
+                                List<TransContext> contexts = transService.beginTransBatch(100, false);
                                 beginTime += System.currentTimeMillis() - start;
-                                if (contexts.size() != 10)
+                                if (contexts.size() != 100)
                                 {
                                     System.out.println(contexts.size());
                                 }
-                                List<Long> transIds = new ArrayList<>(10);
+                                List<Long> transIds = new ArrayList<>(100);
                                 for (TransContext context : contexts)
                                 {
-                                    System.out.println("thread " + Thread.currentThread().getName() + " get trans id " + context.getTransId());
                                     transIds.add(context.getTransId());
                                 }
                                 start = System.currentTimeMillis();
