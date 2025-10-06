@@ -106,13 +106,13 @@ public class Main
             TransService transService = TransService.CreateInstance("10.77.110.37", 18889);
             IndexService indexService = IndexServiceProvider.getService(IndexServiceProvider.ServiceMode.rpc);
             ExecutorService executorService = Executors.newCachedThreadPool();
-            for (int i = 0; i < 16; i++)
+            for (int i = 0; i < 2; i++)
             {
                 executorService.submit(() -> {
                     try
                     {
                         long beginTime = 0, commitTime = 0;
-                        for (int j = 0; j < 2048; j++)
+                        for (int j = 0; j < 2; j++)
                         {
                             try
                             {
@@ -122,13 +122,13 @@ public class Main
                                 //    System.out.println(batch.getLength());
                                 }
                                 long start = System.currentTimeMillis();
-                                List<TransContext> contexts = transService.beginTransBatch(1000, false);
+                                List<TransContext> contexts = transService.beginTransBatch(10, false);
                                 beginTime += System.currentTimeMillis() - start;
-                                if (contexts.size() != 1000)
+                                if (contexts.size() != 10)
                                 {
                                     System.out.println(contexts.size());
                                 }
-                                List<Long> transIds = new ArrayList<>(1000);
+                                List<Long> transIds = new ArrayList<>(10);
                                 for (TransContext context : contexts)
                                 {
                                     transIds.add(context.getTransId());
