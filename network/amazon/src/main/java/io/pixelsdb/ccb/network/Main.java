@@ -131,6 +131,7 @@ public class Main
                                 List<Long> transIds = new ArrayList<>(10);
                                 for (TransContext context : contexts)
                                 {
+                                    System.out.println("thread " + Thread.currentThread().getName() + " get trans id " + context.getTransId());
                                     transIds.add(context.getTransId());
                                 }
                                 start = System.currentTimeMillis();
