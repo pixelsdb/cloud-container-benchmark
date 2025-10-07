@@ -4,8 +4,6 @@ import io.pixelsdb.ccb.network.http.HttpReceiver;
 import io.pixelsdb.ccb.network.http.HttpSender;
 import io.pixelsdb.ccb.network.sqs.S3qsReceiver;
 import io.pixelsdb.ccb.network.sqs.S3qsSender;
-import io.pixelsdb.pixels.common.index.IndexService;
-import io.pixelsdb.pixels.common.index.IndexServiceProvider;
 import io.pixelsdb.pixels.common.transaction.TransContext;
 import io.pixelsdb.pixels.common.transaction.TransService;
 
@@ -104,7 +102,6 @@ public class Main
         else if (program.equals("trans"))
         {
             TransService transService = TransService.CreateInstance("10.77.110.37", 18889);
-            IndexService indexService = IndexServiceProvider.getService(IndexServiceProvider.ServiceMode.rpc);
             ExecutorService executorService = Executors.newCachedThreadPool();
             for (int i = 0; i < 128; i++)
             {
@@ -116,11 +113,6 @@ public class Main
                         {
                             try
                             {
-                                //IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(1, 1000);
-                                //if (batch.getLength() != 1000)
-                                {
-                                //    System.out.println(batch.getLength());
-                                }
                                 long start = System.currentTimeMillis();
                                 List<TransContext> contexts = transService.beginTransBatch(100, false);
                                 beginTime += System.currentTimeMillis() - start;
@@ -134,8 +126,15 @@ public class Main
                                     transIds.add(context.getTransId());
                                 }
                                 start = System.currentTimeMillis();
-                                transService.commitTransBatch(transIds, false);
+                                List<Boolean> success = transService.commitTransBatch(transIds, false);
                                 commitTime += System.currentTimeMillis() - start;
+                                for (int k = 0; k < 100; k++)
+                                {
+                                    if (!success.get(k))
+                                    {
+                                        System.out.println("transaction " + contexts.get(k).getTransId() + " failed to commit");
+                                    }
+                                }
                             } catch (Exception e)
                             {
                                 throw new RuntimeException(e);
