@@ -1,18 +1,25 @@
 package io.pixelsdb.ccb.network;
 
+import com.google.protobuf.ByteString;
 import io.pixelsdb.ccb.network.http.HttpReceiver;
 import io.pixelsdb.ccb.network.http.HttpSender;
 import io.pixelsdb.ccb.network.sqs.S3qsReceiver;
 import io.pixelsdb.ccb.network.sqs.S3qsSender;
+import io.pixelsdb.pixels.common.exception.IndexException;
+import io.pixelsdb.pixels.common.index.IndexService;
+import io.pixelsdb.pixels.common.index.IndexServiceProvider;
 import io.pixelsdb.pixels.common.transaction.TransContext;
 import io.pixelsdb.pixels.common.transaction.TransService;
+import io.pixelsdb.pixels.index.IndexProto;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author hank
@@ -22,7 +29,7 @@ public class Main
 {
     private static final int BUFFER_SIZE = 8 * 1024 * 1024;
     private static final long BUFFER_NUM = 12800;
-    public static void main(String[] args) throws IOException, InterruptedException
+    public static void main(String[] args) throws IOException, InterruptedException, IndexException
     {
         if (args.length < 2)
         {
@@ -146,6 +153,76 @@ public class Main
                         throw new RuntimeException(e);
                     }
                 });
+            }
+            executorService.shutdown();
+            executorService.awaitTermination(10, TimeUnit.HOURS);
+        }
+        else if (program.equals("index"))
+        {
+            int threadNum = Integer.parseInt(args[2]);
+            int batchNum = Integer.parseInt(args[3]);
+            int batchSize = Integer.parseInt(args[4]);
+            IndexService indexService = IndexServiceProvider.getService(IndexServiceProvider.ServiceMode.local);
+            ExecutorService executorService = Executors.newFixedThreadPool(threadNum);
+            indexService.openIndex(1L, 1L, true);
+            AtomicLong rowKeyPostfix = new AtomicLong(0);
+            for (int i = 0; i < threadNum; i++)
+            {
+                long finalI = i;
+                if (method.equals("put"))
+                {
+                    executorService.submit(() -> {
+                        for (int j = 0; j < batchNum; j++)
+                        {
+                            IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(1L, batchSize);
+                            List<IndexProto.PrimaryIndexEntry> primaryIndexEntries = new ArrayList<>(batchSize);
+                            for (int k = 0; k < batch.getLength(); k++)
+                            {
+                                long rowId = batch.getRowIdStart() + k;
+                                // build a unique row key = 'key-{rowId}'
+                                IndexProto.IndexKey indexKey = IndexProto.IndexKey.newBuilder()
+                                        .setTableId(1L).setIndexId(1L).setTimestamp(System.currentTimeMillis())
+                                        .setKey(ByteString.copyFrom("key-" + rowKeyPostfix.getAndIncrement(), StandardCharsets.UTF_8)).build();
+                                // set the row location to the i*bathNum+j th file, the first row group, and the j*batchSize+k row.
+                                IndexProto.RowLocation rowLocation = IndexProto.RowLocation.newBuilder().setFileId(finalI * batchNum + j)
+                                        .setRgId(0).setRgRowOffset(j * batchSize + k).build();
+                                primaryIndexEntries.add(IndexProto.PrimaryIndexEntry.newBuilder().setRowId(rowId)
+                                        .setIndexKey(indexKey).setRowLocation(rowLocation).build());
+                            }
+                            try
+                            {
+                                indexService.putPrimaryIndexEntries(1L, 1L, primaryIndexEntries);
+                            } catch (IndexException e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+                }
+                else if (method.equals("delete"))
+                {
+                    executorService.submit(() -> {
+                        for (int j = 0; j < batchNum; j++)
+                        {
+                            List<IndexProto.IndexKey> indexKeys = new ArrayList<>(batchSize);
+                            for (int k = 0; k < batchSize; k++)
+                            {
+                                // build a unique row key = 'key-{rowId}'
+                                IndexProto.IndexKey indexKey = IndexProto.IndexKey.newBuilder()
+                                        .setTableId(1L).setIndexId(1L).setTimestamp(System.currentTimeMillis())
+                                        .setKey(ByteString.copyFrom("key-" + rowKeyPostfix.getAndIncrement(), StandardCharsets.UTF_8)).build();
+                                indexKeys.add(indexKey);
+                            }
+                            try
+                            {
+                                indexService.deletePrimaryIndexEntries(1L, 1L, indexKeys);
+                            } catch (IndexException e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+                }
             }
             executorService.shutdown();
             executorService.awaitTermination(10, TimeUnit.HOURS);
