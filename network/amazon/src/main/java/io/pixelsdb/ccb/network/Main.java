@@ -174,6 +174,7 @@ public class Main
                 if (method.equals("put"))
                 {
                     executorService.submit(() -> {
+                        long start = System.currentTimeMillis();
                         for (int j = 0; j < batchNum; j++)
                         {
                             IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(tableId, batchSize);
@@ -199,11 +200,15 @@ public class Main
                                 e.printStackTrace();
                             }
                         }
+                        long end = System.currentTimeMillis();
+                        System.out.println("elapsed time: " + (end - start) + " ms");
+                        System.out.println("throughput: " + ((double) batchNum * batchSize) * 1000.0d / (end - start) + " ops");
                     });
                 }
                 else if (method.equals("delete"))
                 {
                     executorService.submit(() -> {
+                        long start = System.currentTimeMillis();
                         for (int j = 0; j < batchNum; j++)
                         {
                             List<IndexProto.IndexKey> indexKeys = new ArrayList<>(batchSize);
@@ -223,6 +228,9 @@ public class Main
                                 e.printStackTrace();
                             }
                         }
+                        long end = System.currentTimeMillis();
+                        System.out.println("elapsed time: " + (end - start) + " ms");
+                        System.out.println("throughput: " + ((double) batchNum * batchSize) * 1000.0d / (end - start) + " ops");
                     });
                 }
             }
