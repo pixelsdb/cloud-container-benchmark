@@ -237,6 +237,7 @@ public class Main
             }
             executorService.shutdown();
             executorService.awaitTermination(10, TimeUnit.HOURS);
+            indexService.closeIndex(tableId, indexId, true);
             long endGlobal = System.currentTimeMillis();
             System.out.println("global elapsed time: " + (endGlobal - startGlobal) + " ms");
             System.out.println("global throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
