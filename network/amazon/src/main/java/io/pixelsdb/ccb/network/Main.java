@@ -162,9 +162,11 @@ public class Main
             int threadNum = Integer.parseInt(args[2]);
             int batchNum = Integer.parseInt(args[3]);
             int batchSize = Integer.parseInt(args[4]);
+            long tableId = Long.parseLong(args[5]);
+            long indexId = Long.parseLong(args[6]);
             IndexService indexService = IndexServiceProvider.getService(IndexServiceProvider.ServiceMode.local);
             ExecutorService executorService = Executors.newFixedThreadPool(threadNum);
-            indexService.openIndex(1L, 1L, true);
+            indexService.openIndex(tableId, indexId, true);
             AtomicLong rowKeyPostfix = new AtomicLong(0);
             for (int i = 0; i < threadNum; i++)
             {
@@ -174,14 +176,14 @@ public class Main
                     executorService.submit(() -> {
                         for (int j = 0; j < batchNum; j++)
                         {
-                            IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(1L, batchSize);
+                            IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(tableId, batchSize);
                             List<IndexProto.PrimaryIndexEntry> primaryIndexEntries = new ArrayList<>(batchSize);
                             for (int k = 0; k < batch.getLength(); k++)
                             {
                                 long rowId = batch.getRowIdStart() + k;
                                 // build a unique row key = 'key-{rowId}'
                                 IndexProto.IndexKey indexKey = IndexProto.IndexKey.newBuilder()
-                                        .setTableId(1L).setIndexId(1L).setTimestamp(System.currentTimeMillis())
+                                        .setTableId(tableId).setIndexId(indexId).setTimestamp(System.currentTimeMillis())
                                         .setKey(ByteString.copyFrom("key-" + rowKeyPostfix.getAndIncrement(), StandardCharsets.UTF_8)).build();
                                 // set the row location to the i*bathNum+j th file, the first row group, and the j*batchSize+k row.
                                 IndexProto.RowLocation rowLocation = IndexProto.RowLocation.newBuilder().setFileId(finalI * batchNum + j)
@@ -191,7 +193,7 @@ public class Main
                             }
                             try
                             {
-                                indexService.putPrimaryIndexEntries(1L, 1L, primaryIndexEntries);
+                                indexService.putPrimaryIndexEntries(tableId, indexId, primaryIndexEntries);
                             } catch (IndexException e)
                             {
                                 e.printStackTrace();
@@ -209,13 +211,13 @@ public class Main
                             {
                                 // build a unique row key = 'key-{rowId}'
                                 IndexProto.IndexKey indexKey = IndexProto.IndexKey.newBuilder()
-                                        .setTableId(1L).setIndexId(1L).setTimestamp(System.currentTimeMillis())
+                                        .setTableId(tableId).setIndexId(indexId).setTimestamp(System.currentTimeMillis())
                                         .setKey(ByteString.copyFrom("key-" + rowKeyPostfix.getAndIncrement(), StandardCharsets.UTF_8)).build();
                                 indexKeys.add(indexKey);
                             }
                             try
                             {
-                                indexService.deletePrimaryIndexEntries(1L, 1L, indexKeys);
+                                indexService.deletePrimaryIndexEntries(tableId, indexId, indexKeys);
                             } catch (IndexException e)
                             {
                                 e.printStackTrace();
