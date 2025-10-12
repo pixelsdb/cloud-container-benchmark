@@ -168,6 +168,7 @@ public class Main
             ExecutorService executorService = Executors.newFixedThreadPool(threadNum);
             indexService.openIndex(tableId, indexId, true);
             AtomicLong rowKeyPostfix = new AtomicLong(0);
+            long startGlobal = System.currentTimeMillis();
             for (int i = 0; i < threadNum; i++)
             {
                 long finalI = i;
@@ -236,6 +237,9 @@ public class Main
             }
             executorService.shutdown();
             executorService.awaitTermination(10, TimeUnit.HOURS);
+            long endGlobal = System.currentTimeMillis();
+            System.out.println("global elapsed time: " + (endGlobal - startGlobal) + " ms");
+            System.out.println("global throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
         }
         else
         {
