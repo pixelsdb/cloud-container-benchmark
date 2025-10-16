@@ -159,11 +159,11 @@ public class Main
         }
         else if (program.equals("index"))
         {
-            int threadNum = Integer.parseInt(args[2]);
-            int batchNum = Integer.parseInt(args[3]);
-            int batchSize = Integer.parseInt(args[4]);
-            long tableId = Long.parseLong(args[5]);
-            long indexId = Long.parseLong(args[6]);
+            int threadNum = Integer.parseInt(args[1]);
+            int batchNum = Integer.parseInt(args[2]);
+            int batchSize = Integer.parseInt(args[3]);
+            long tableId = Long.parseLong(args[4]);
+            long indexId = Long.parseLong(args[5]);
             IndexService indexService = IndexServiceProvider.getService(IndexServiceProvider.ServiceMode.local);
             ExecutorService executorService = Executors.newFixedThreadPool(threadNum);
             indexService.openIndex(tableId, indexId, true);
