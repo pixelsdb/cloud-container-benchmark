@@ -8,7 +8,6 @@ import io.pixelsdb.ccb.network.sqs.S3qsSender;
 import io.pixelsdb.pixels.common.exception.IndexException;
 import io.pixelsdb.pixels.common.index.IndexService;
 import io.pixelsdb.pixels.common.index.IndexServiceProvider;
-import io.pixelsdb.pixels.common.index.MainIndexFactory;
 import io.pixelsdb.pixels.common.transaction.TransContext;
 import io.pixelsdb.pixels.common.transaction.TransService;
 import io.pixelsdb.pixels.index.IndexProto;
@@ -210,8 +209,7 @@ public class Main
             }
             executorService.shutdown();
             executorService.awaitTermination(10, TimeUnit.HOURS);
-            //indexService.closeIndex(tableId, indexId, true);
-            MainIndexFactory.Instance().closeIndex(tableId, false);
+            indexService.closeIndex(tableId, indexId, true);
             long endGlobal = System.currentTimeMillis();
             System.out.println("put elapsed time: " + (endGlobal - startGlobal) + " ms");
             System.out.println("put throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
