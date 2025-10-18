@@ -209,13 +209,13 @@ public class Main
             }
             executorService.shutdown();
             executorService.awaitTermination(10, TimeUnit.HOURS);
-            indexService.closeIndex(tableId, indexId, true);
+            //indexService.closeIndex(tableId, indexId, true);
             long endGlobal = System.currentTimeMillis();
             System.out.println("put elapsed time: " + (endGlobal - startGlobal) + " ms");
             System.out.println("put throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
 
             executorService = Executors.newFixedThreadPool(threadNum);
-            indexService.openIndex(tableId, indexId, true);
+            //indexService.openIndex(tableId, indexId, true);
             rowKeyPostfix.set(0);
             startGlobal = System.currentTimeMillis();
             for (int i = 0; i < threadNum; i++)
