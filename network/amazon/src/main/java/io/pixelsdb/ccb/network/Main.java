@@ -190,7 +190,7 @@ public class Main
                                         .setTableId(tableId).setIndexId(indexId).setTimestamp(timestamp)
                                         .setKey(ByteString.copyFrom("key-" + rowKeyPostfix.getAndIncrement(), StandardCharsets.UTF_8)).build();
                                 // set the row location to the i*bathNum+j th file, the first row group, and the j*batchSize+k row.
-                                IndexProto.RowLocation rowLocation = IndexProto.RowLocation.newBuilder().setFileId(finalI * batchNum + j)
+                                IndexProto.RowLocation rowLocation = IndexProto.RowLocation.newBuilder().setFileId(finalI)
                                         .setRgId(0).setRgRowOffset(j * batchSize + k).build();
                                 primaryIndexEntries.add(IndexProto.PrimaryIndexEntry.newBuilder().setRowId(rowId)
                                         .setIndexKey(indexKey).setRowLocation(rowLocation).build());
