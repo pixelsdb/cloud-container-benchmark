@@ -250,7 +250,7 @@ public class Main
             }
             executorService.shutdown();
             executorService.awaitTermination(10, TimeUnit.HOURS);
-            indexService.closeIndex(tableId, indexId, true);
+            //indexService.closeIndex(tableId, indexId, true);
             endGlobal = System.currentTimeMillis();
             System.out.println("delete elapsed time: " + (endGlobal - startGlobal) + " ms");
             System.out.println("delete throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
