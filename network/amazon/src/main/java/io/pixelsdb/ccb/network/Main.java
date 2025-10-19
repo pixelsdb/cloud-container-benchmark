@@ -242,7 +242,7 @@ public class Main
                                 primaryIndexEntries.add(IndexProto.PrimaryIndexEntry.newBuilder().setRowId(rowId)
                                         .setIndexKey(indexKey).setRowLocation(rowLocation).build());
                             }
-                            indexService.putPrimaryIndexEntries(tableId, indexId, primaryIndexEntries);
+                            indexService.updatePrimaryIndexEntries(tableId, indexId, primaryIndexEntries);
                         }
                         catch (IndexException e)
                         {
@@ -258,8 +258,8 @@ public class Main
             executorService.awaitTermination(10, TimeUnit.HOURS);
             //indexService.closeIndex(tableId, indexId, true);
             endGlobal = System.currentTimeMillis();
-            System.out.println("put elapsed time: " + (endGlobal - startGlobal) + " ms");
-            System.out.println("put throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
+            System.out.println("update elapsed time: " + (endGlobal - startGlobal) + " ms");
+            System.out.println("update throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
 
             executorService = Executors.newFixedThreadPool(threadNum);
             rowKeyPostfix.set(0);
@@ -289,7 +289,7 @@ public class Main
                                 primaryIndexEntries.add(IndexProto.PrimaryIndexEntry.newBuilder().setRowId(rowId)
                                         .setIndexKey(indexKey).setRowLocation(rowLocation).build());
                             }
-                            indexService.putPrimaryIndexEntries(tableId, indexId, primaryIndexEntries);
+                            indexService.updatePrimaryIndexEntries(tableId, indexId, primaryIndexEntries);
                         }
                         catch (IndexException e)
                         {
@@ -305,8 +305,8 @@ public class Main
             executorService.awaitTermination(10, TimeUnit.HOURS);
             //indexService.closeIndex(tableId, indexId, true);
             endGlobal = System.currentTimeMillis();
-            System.out.println("put elapsed time: " + (endGlobal - startGlobal) + " ms");
-            System.out.println("put throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
+            System.out.println("update elapsed time: " + (endGlobal - startGlobal) + " ms");
+            System.out.println("update throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
 
             executorService = Executors.newFixedThreadPool(threadNum);
             rowKeyPostfix.set(0);
@@ -336,7 +336,7 @@ public class Main
                                 primaryIndexEntries.add(IndexProto.PrimaryIndexEntry.newBuilder().setRowId(rowId)
                                         .setIndexKey(indexKey).setRowLocation(rowLocation).build());
                             }
-                            indexService.putPrimaryIndexEntries(tableId, indexId, primaryIndexEntries);
+                            indexService.updatePrimaryIndexEntries(tableId, indexId, primaryIndexEntries);
                         }
                         catch (IndexException e)
                         {
@@ -352,8 +352,8 @@ public class Main
             executorService.awaitTermination(10, TimeUnit.HOURS);
             //indexService.closeIndex(tableId, indexId, true);
             endGlobal = System.currentTimeMillis();
-            System.out.println("put elapsed time: " + (endGlobal - startGlobal) + " ms");
-            System.out.println("put throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
+            System.out.println("update elapsed time: " + (endGlobal - startGlobal) + " ms");
+            System.out.println("update throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
 
             executorService = Executors.newFixedThreadPool(threadNum);
             rowKeyPostfix.set(0);
@@ -383,7 +383,7 @@ public class Main
                                 primaryIndexEntries.add(IndexProto.PrimaryIndexEntry.newBuilder().setRowId(rowId)
                                         .setIndexKey(indexKey).setRowLocation(rowLocation).build());
                             }
-                            indexService.putPrimaryIndexEntries(tableId, indexId, primaryIndexEntries);
+                            indexService.updatePrimaryIndexEntries(tableId, indexId, primaryIndexEntries);
                         }
                         catch (IndexException e)
                         {
@@ -399,8 +399,8 @@ public class Main
             executorService.awaitTermination(10, TimeUnit.HOURS);
             //indexService.closeIndex(tableId, indexId, true);
             endGlobal = System.currentTimeMillis();
-            System.out.println("put elapsed time: " + (endGlobal - startGlobal) + " ms");
-            System.out.println("put throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
+            System.out.println("update elapsed time: " + (endGlobal - startGlobal) + " ms");
+            System.out.println("update throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
 
             executorService = Executors.newFixedThreadPool(threadNum);
             //indexService.openIndex(tableId, indexId, true);
@@ -432,8 +432,8 @@ public class Main
                         }
                     }
                     long end = System.currentTimeMillis();
-                    System.out.println("elapsed time: " + (end - start) + " ms");
-                    System.out.println("throughput: " + ((double) batchNum * batchSize) * 1000.0d / (end - start) + " ops");
+                    //System.out.println("elapsed time: " + (end - start) + " ms");
+                    //System.out.println("throughput: " + ((double) batchNum * batchSize) * 1000.0d / (end - start) + " ops");
                 });
             }
             executorService.shutdown();
