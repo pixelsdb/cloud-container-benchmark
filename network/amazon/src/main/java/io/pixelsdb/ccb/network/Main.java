@@ -214,193 +214,54 @@ public class Main
             System.out.println("put elapsed time: " + (endGlobal - startGlobal) + " ms");
             System.out.println("put throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
 
-            executorService = Executors.newFixedThreadPool(threadNum);
-            rowKeyPostfix.set(0);
-            startGlobal = System.currentTimeMillis();
-            for (int i = 0; i < threadNum; i++)
+            for (int x = 0; x < 10; x++)
             {
-                long finalI = i;
-                executorService.submit(() -> {
-                    long start = System.currentTimeMillis();
-                    for (int j = 0; j < batchNum; j++)
-                    {
-                        try
+                executorService = Executors.newFixedThreadPool(threadNum);
+                rowKeyPostfix.set(0);
+                startGlobal = System.currentTimeMillis();
+                for (int i = 0; i < threadNum; i++)
+                {
+                    long finalI = i;
+                    executorService.submit(() -> {
+                        long start = System.currentTimeMillis();
+                        for (int j = 0; j < batchNum; j++)
                         {
-                            long timestamp = transTimestamp.getAndIncrement();
-                            IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(tableId, batchSize);
-                            List<IndexProto.PrimaryIndexEntry> primaryIndexEntries = new ArrayList<>(batchSize);
-                            for (int k = 0; k < batch.getLength(); k++)
+                            try
                             {
-                                long rowId = batch.getRowIdStart() + k;
-                                // build a unique row key = 'key-{rowId}'
-                                IndexProto.IndexKey indexKey = IndexProto.IndexKey.newBuilder()
-                                        .setTableId(tableId).setIndexId(indexId).setTimestamp(timestamp)
-                                        .setKey(ByteString.copyFrom("key-" + rowKeyPostfix.getAndIncrement(), StandardCharsets.UTF_8)).build();
-                                // set the row location to the i*bathNum+j th file, the first row group, and the j*batchSize+k row.
-                                IndexProto.RowLocation rowLocation = IndexProto.RowLocation.newBuilder().setFileId(finalI)
-                                        .setRgId(0).setRgRowOffset(j * batchSize + k).build();
-                                primaryIndexEntries.add(IndexProto.PrimaryIndexEntry.newBuilder().setRowId(rowId)
-                                        .setIndexKey(indexKey).setRowLocation(rowLocation).build());
-                            }
-                            indexService.updatePrimaryIndexEntries(tableId, indexId, primaryIndexEntries);
-                        }
-                        catch (IndexException e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                    long end = System.currentTimeMillis();
-                    //System.out.println("elapsed time: " + (end - start) + " ms");
-                    //System.out.println("throughput: " + ((double) batchNum * batchSize) * 1000.0d / (end - start) + " ops");
-                });
-            }
-            executorService.shutdown();
-            executorService.awaitTermination(10, TimeUnit.HOURS);
-            //indexService.closeIndex(tableId, indexId, true);
-            endGlobal = System.currentTimeMillis();
-            System.out.println("update elapsed time: " + (endGlobal - startGlobal) + " ms");
-            System.out.println("update throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
-
-            executorService = Executors.newFixedThreadPool(threadNum);
-            rowKeyPostfix.set(0);
-            startGlobal = System.currentTimeMillis();
-            for (int i = 0; i < threadNum; i++)
-            {
-                long finalI = i;
-                executorService.submit(() -> {
-                    long start = System.currentTimeMillis();
-                    for (int j = 0; j < batchNum; j++)
-                    {
-                        try
-                        {
-                            long timestamp = transTimestamp.getAndIncrement();
-                            IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(tableId, batchSize);
-                            List<IndexProto.PrimaryIndexEntry> primaryIndexEntries = new ArrayList<>(batchSize);
-                            for (int k = 0; k < batch.getLength(); k++)
+                                long timestamp = transTimestamp.getAndIncrement();
+                                IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(tableId, batchSize);
+                                List<IndexProto.PrimaryIndexEntry> primaryIndexEntries = new ArrayList<>(batchSize);
+                                for (int k = 0; k < batch.getLength(); k++)
+                                {
+                                    long rowId = batch.getRowIdStart() + k;
+                                    // build a unique row key = 'key-{rowId}'
+                                    IndexProto.IndexKey indexKey = IndexProto.IndexKey.newBuilder()
+                                            .setTableId(tableId).setIndexId(indexId).setTimestamp(timestamp)
+                                            .setKey(ByteString.copyFrom("key-" + rowKeyPostfix.getAndIncrement(), StandardCharsets.UTF_8)).build();
+                                    // set the row location to the i*bathNum+j th file, the first row group, and the j*batchSize+k row.
+                                    IndexProto.RowLocation rowLocation = IndexProto.RowLocation.newBuilder().setFileId(finalI)
+                                            .setRgId(0).setRgRowOffset(j * batchSize + k).build();
+                                    primaryIndexEntries.add(IndexProto.PrimaryIndexEntry.newBuilder().setRowId(rowId)
+                                            .setIndexKey(indexKey).setRowLocation(rowLocation).build());
+                                }
+                                indexService.updatePrimaryIndexEntries(tableId, indexId, primaryIndexEntries);
+                            } catch (IndexException e)
                             {
-                                long rowId = batch.getRowIdStart() + k;
-                                // build a unique row key = 'key-{rowId}'
-                                IndexProto.IndexKey indexKey = IndexProto.IndexKey.newBuilder()
-                                        .setTableId(tableId).setIndexId(indexId).setTimestamp(timestamp)
-                                        .setKey(ByteString.copyFrom("key-" + rowKeyPostfix.getAndIncrement(), StandardCharsets.UTF_8)).build();
-                                // set the row location to the i*bathNum+j th file, the first row group, and the j*batchSize+k row.
-                                IndexProto.RowLocation rowLocation = IndexProto.RowLocation.newBuilder().setFileId(finalI)
-                                        .setRgId(0).setRgRowOffset(j * batchSize + k).build();
-                                primaryIndexEntries.add(IndexProto.PrimaryIndexEntry.newBuilder().setRowId(rowId)
-                                        .setIndexKey(indexKey).setRowLocation(rowLocation).build());
+                                e.printStackTrace();
                             }
-                            indexService.updatePrimaryIndexEntries(tableId, indexId, primaryIndexEntries);
                         }
-                        catch (IndexException e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                    long end = System.currentTimeMillis();
-                    //System.out.println("elapsed time: " + (end - start) + " ms");
-                    //System.out.println("throughput: " + ((double) batchNum * batchSize) * 1000.0d / (end - start) + " ops");
-                });
+                        long end = System.currentTimeMillis();
+                        //System.out.println("elapsed time: " + (end - start) + " ms");
+                        //System.out.println("throughput: " + ((double) batchNum * batchSize) * 1000.0d / (end - start) + " ops");
+                    });
+                }
+                executorService.shutdown();
+                executorService.awaitTermination(10, TimeUnit.HOURS);
+                //indexService.closeIndex(tableId, indexId, true);
+                endGlobal = System.currentTimeMillis();
+                System.out.println("update elapsed time: " + (endGlobal - startGlobal) + " ms");
+                System.out.println("update throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
             }
-            executorService.shutdown();
-            executorService.awaitTermination(10, TimeUnit.HOURS);
-            //indexService.closeIndex(tableId, indexId, true);
-            endGlobal = System.currentTimeMillis();
-            System.out.println("update elapsed time: " + (endGlobal - startGlobal) + " ms");
-            System.out.println("update throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
-
-            executorService = Executors.newFixedThreadPool(threadNum);
-            rowKeyPostfix.set(0);
-            startGlobal = System.currentTimeMillis();
-            for (int i = 0; i < threadNum; i++)
-            {
-                long finalI = i;
-                executorService.submit(() -> {
-                    long start = System.currentTimeMillis();
-                    for (int j = 0; j < batchNum; j++)
-                    {
-                        try
-                        {
-                            long timestamp = transTimestamp.getAndIncrement();
-                            IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(tableId, batchSize);
-                            List<IndexProto.PrimaryIndexEntry> primaryIndexEntries = new ArrayList<>(batchSize);
-                            for (int k = 0; k < batch.getLength(); k++)
-                            {
-                                long rowId = batch.getRowIdStart() + k;
-                                // build a unique row key = 'key-{rowId}'
-                                IndexProto.IndexKey indexKey = IndexProto.IndexKey.newBuilder()
-                                        .setTableId(tableId).setIndexId(indexId).setTimestamp(timestamp)
-                                        .setKey(ByteString.copyFrom("key-" + rowKeyPostfix.getAndIncrement(), StandardCharsets.UTF_8)).build();
-                                // set the row location to the i*bathNum+j th file, the first row group, and the j*batchSize+k row.
-                                IndexProto.RowLocation rowLocation = IndexProto.RowLocation.newBuilder().setFileId(finalI)
-                                        .setRgId(0).setRgRowOffset(j * batchSize + k).build();
-                                primaryIndexEntries.add(IndexProto.PrimaryIndexEntry.newBuilder().setRowId(rowId)
-                                        .setIndexKey(indexKey).setRowLocation(rowLocation).build());
-                            }
-                            indexService.updatePrimaryIndexEntries(tableId, indexId, primaryIndexEntries);
-                        }
-                        catch (IndexException e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                    long end = System.currentTimeMillis();
-                    //System.out.println("elapsed time: " + (end - start) + " ms");
-                    //System.out.println("throughput: " + ((double) batchNum * batchSize) * 1000.0d / (end - start) + " ops");
-                });
-            }
-            executorService.shutdown();
-            executorService.awaitTermination(10, TimeUnit.HOURS);
-            //indexService.closeIndex(tableId, indexId, true);
-            endGlobal = System.currentTimeMillis();
-            System.out.println("update elapsed time: " + (endGlobal - startGlobal) + " ms");
-            System.out.println("update throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
-
-            executorService = Executors.newFixedThreadPool(threadNum);
-            rowKeyPostfix.set(0);
-            startGlobal = System.currentTimeMillis();
-            for (int i = 0; i < threadNum; i++)
-            {
-                long finalI = i;
-                executorService.submit(() -> {
-                    long start = System.currentTimeMillis();
-                    for (int j = 0; j < batchNum; j++)
-                    {
-                        try
-                        {
-                            long timestamp = transTimestamp.getAndIncrement();
-                            IndexProto.RowIdBatch batch = indexService.allocateRowIdBatch(tableId, batchSize);
-                            List<IndexProto.PrimaryIndexEntry> primaryIndexEntries = new ArrayList<>(batchSize);
-                            for (int k = 0; k < batch.getLength(); k++)
-                            {
-                                long rowId = batch.getRowIdStart() + k;
-                                // build a unique row key = 'key-{rowId}'
-                                IndexProto.IndexKey indexKey = IndexProto.IndexKey.newBuilder()
-                                        .setTableId(tableId).setIndexId(indexId).setTimestamp(timestamp)
-                                        .setKey(ByteString.copyFrom("key-" + rowKeyPostfix.getAndIncrement(), StandardCharsets.UTF_8)).build();
-                                // set the row location to the i*bathNum+j th file, the first row group, and the j*batchSize+k row.
-                                IndexProto.RowLocation rowLocation = IndexProto.RowLocation.newBuilder().setFileId(finalI)
-                                        .setRgId(0).setRgRowOffset(j * batchSize + k).build();
-                                primaryIndexEntries.add(IndexProto.PrimaryIndexEntry.newBuilder().setRowId(rowId)
-                                        .setIndexKey(indexKey).setRowLocation(rowLocation).build());
-                            }
-                            indexService.updatePrimaryIndexEntries(tableId, indexId, primaryIndexEntries);
-                        }
-                        catch (IndexException e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                    long end = System.currentTimeMillis();
-                    //System.out.println("elapsed time: " + (end - start) + " ms");
-                    //System.out.println("throughput: " + ((double) batchNum * batchSize) * 1000.0d / (end - start) + " ops");
-                });
-            }
-            executorService.shutdown();
-            executorService.awaitTermination(10, TimeUnit.HOURS);
-            //indexService.closeIndex(tableId, indexId, true);
-            endGlobal = System.currentTimeMillis();
-            System.out.println("update elapsed time: " + (endGlobal - startGlobal) + " ms");
-            System.out.println("update throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
 
             executorService = Executors.newFixedThreadPool(threadNum);
             //indexService.openIndex(tableId, indexId, true);
