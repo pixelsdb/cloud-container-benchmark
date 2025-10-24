@@ -175,7 +175,7 @@ public class Main
                 long finalI = i;
                 executorService.submit(() -> {
                     long start = System.currentTimeMillis();
-                    for (int j = 0; j < batchNum; j++)
+                    for (int j = 0; j < batchNum * 10; j++)
                     {
                         try
                         {
@@ -271,7 +271,7 @@ public class Main
             {
                 executorService.submit(() -> {
                     long start = System.currentTimeMillis();
-                    for (int j = 0; j < batchNum; j++)
+                    for (int j = 0; j < batchNum * 10; j++)
                     {
                         long timestamp = transTimestamp.getAndIncrement();
                         List<IndexProto.IndexKey> indexKeys = new ArrayList<>(batchSize);
