@@ -212,7 +212,7 @@ public class Main
             //indexService.closeIndex(tableId, indexId, true);
             long endGlobal = System.currentTimeMillis();
             System.out.println("put elapsed time: " + (endGlobal - startGlobal) + " ms");
-            System.out.println("put throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
+            System.out.println("put throughput: " + ((double) threadNum * batchNum * 10 * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
 
             for (int x = 0; x < 10; x++)
             {
@@ -302,7 +302,7 @@ public class Main
             //indexService.closeIndex(tableId, indexId, true);
             endGlobal = System.currentTimeMillis();
             System.out.println("delete elapsed time: " + (endGlobal - startGlobal) + " ms");
-            System.out.println("delete throughput: " + ((double) threadNum * batchNum * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
+            System.out.println("delete throughput: " + ((double) threadNum * batchNum * 10 * batchSize) * 1000.0d / (endGlobal - startGlobal) + " ops");
         }
         else
         {
